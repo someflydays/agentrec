@@ -74,12 +74,16 @@ export class TranscriptParser {
     const trimmed = line.trim();
     if (trimmed.length === 0) return [];
 
-    let raw: RawTranscriptLine;
+    let parsed: unknown;
     try {
-      raw = JSON.parse(trimmed) as RawTranscriptLine;
+      parsed = JSON.parse(trimmed);
     } catch {
       return [];
     }
+    // A torn or unexpected line can be valid JSON that is not an object (null, a
+    // bare number); anything but an object carries nothing we can observe.
+    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) return [];
+    const raw = parsed as RawTranscriptLine;
 
     if (raw.type === "ai-title" && typeof raw.aiTitle === "string") {
       if (raw.aiTitle === this.lastTitle) return [];

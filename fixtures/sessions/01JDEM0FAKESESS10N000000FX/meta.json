@@ -1,0 +1,14 @@
+{
+  "formatVersion": 1,
+  "id": "01JDEM0FAKESESS10N000000FX",
+  "agent": "claude-code",
+  "command": ["claude"],
+  "cwd": "/home/dev/circuitsim",
+  "startedAt": "2026-08-01T17:03:12.000Z",
+  "endedAt": "2026-08-01T17:12:27.000Z",
+  "exitCode": 0,
+  "title": "Fix flaky watchdog test in circuitsim",
+  "agentSessionId": "b7f4c2a1-9e33-4d18-8a5c-6f0e21d4b7a9",
+  "gitBranch": "main",
+  "recorderVersion": "0.1.0"
+}
