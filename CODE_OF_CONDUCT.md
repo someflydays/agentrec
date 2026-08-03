@@ -53,7 +53,7 @@ an appointed representative at an online or offline event.
 Instances of abusive, harassing, or otherwise unacceptable behavior may be reported to the community
 leaders responsible for enforcement via GitHub: open a private report through the repository's
 **Security** tab, or contact
-[@PLACEHOLDER_GH_OWNER](https://github.com/PLACEHOLDER_GH_OWNER) directly on GitHub. All complaints
+[@someflydays](https://github.com/someflydays) directly on GitHub. All complaints
 will be reviewed and investigated promptly and fairly.
 
 All community leaders are obligated to respect the privacy and security of the reporter of any

@@ -1,9 +1,8 @@
 blank_issues_enabled: false
 
-# Discussions are not enabled for this repository yet. When they are, uncomment the
-# block below and replace PLACEHOLDER_GH_OWNER with the real owner.
+# Uncomment once Discussions are enabled for the repository.
 #
 # contact_links:
 #   - name: Questions and ideas
-#     url: https://github.com/PLACEHOLDER_GH_OWNER/agentrec/discussions
+#     url: https://github.com/someflydays/agentrec/discussions
 #     about: Ask a question or float an idea before opening an issue.

@@ -4,7 +4,7 @@
 
 **Git has history for your code. agentrec has history for how it was made.**
 
-[![CI](https://github.com/PLACEHOLDER_GH_OWNER/agentrec/actions/workflows/ci.yml/badge.svg)](https://github.com/PLACEHOLDER_GH_OWNER/agentrec/actions/workflows/ci.yml)
+[![CI](https://github.com/someflydays/agentrec/actions/workflows/ci.yml/badge.svg)](https://github.com/someflydays/agentrec/actions/workflows/ci.yml)
 [![npm](https://img.shields.io/npm/v/agentrec.svg?color=cb3837)](https://www.npmjs.com/package/agentrec)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%E2%89%A520.19-3fb950.svg)](package.json)

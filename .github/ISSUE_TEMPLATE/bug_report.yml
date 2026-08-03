@@ -7,7 +7,7 @@ body:
       value: |
         Before filing, please check whether anything you paste here contains secrets or
         proprietary code. Recordings capture whatever was on screen — see
-        [docs/security.md](https://github.com/PLACEHOLDER_GH_OWNER/agentrec/blob/main/docs/security.md).
+        [docs/security.md](https://github.com/someflydays/agentrec/blob/main/docs/security.md).
 
   - type: textarea
     id: what-happened
