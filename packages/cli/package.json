@@ -1,0 +1,36 @@
+{
+  "name": "@agent-blackbox/cli",
+  "version": "0.1.0",
+  "description": "Flight recorder for Claude Code sessions: record, replay, and share exactly what your coding agent did",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "agent-blackbox": "./bin/agent-blackbox.js",
+    "abb": "./bin/agent-blackbox.js"
+  },
+  "files": [
+    "bin",
+    "dist"
+  ],
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@agent-blackbox/core": "workspace:*",
+    "@agent-blackbox/dashboard": "workspace:*",
+    "@lydell/node-pty": "^1.1.0",
+    "commander": "^15.0.0",
+    "picocolors": "^1.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.10"
+  }
+}
