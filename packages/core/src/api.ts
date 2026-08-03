@@ -2,7 +2,7 @@ import type { SessionSummary } from "./summary.js";
 import type { SessionEvent, SessionMeta } from "./types.js";
 
 /**
- * Contract between the local dashboard server (`agent-blackbox ui`) and the
+ * Contract between the local dashboard server (`agentrec ui`) and the
  * dashboard SPA. All routes are same-origin, JSON unless noted.
  */
 export const API_ROUTES = {

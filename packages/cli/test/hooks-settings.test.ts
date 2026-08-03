@@ -7,12 +7,12 @@ import {
 } from "../src/recorder/hooks-settings.js";
 
 const EXEC_PATH = "/usr/local/bin/node";
-const CLI_ENTRY = "/home/dev/my apps/agent-blackbox/dist/index.js";
+const CLI_ENTRY = "/home/dev/my apps/agentrec/dist/index.js";
 
 describe("hookCommandLine", () => {
   it("quotes both paths and calls the hidden subcommand", () => {
     expect(hookCommandLine(EXEC_PATH, CLI_ENTRY)).toBe(
-      '"/usr/local/bin/node" "/home/dev/my apps/agent-blackbox/dist/index.js" _hook',
+      '"/usr/local/bin/node" "/home/dev/my apps/agentrec/dist/index.js" _hook',
     );
   });
 });

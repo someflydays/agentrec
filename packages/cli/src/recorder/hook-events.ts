@@ -1,4 +1,4 @@
-import type { SessionEventData, SessionEventType } from "@agent-blackbox/core";
+import type { SessionEventData, SessionEventType } from "@agentrec/core";
 import { TRUNCATION_MARKER, truncate } from "../format.js";
 import { deriveFileChange } from "./file-changes.js";
 import { asNonEmptyString, asRecord } from "./json.js";

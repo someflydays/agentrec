@@ -1,4 +1,4 @@
-import { CastWriter, type SessionWriter } from "@agent-blackbox/core";
+import { CastWriter, type SessionWriter } from "@agentrec/core";
 import { type IDisposable, spawn } from "@lydell/node-pty";
 
 const DEFAULT_COLS = 80;

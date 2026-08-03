@@ -1,4 +1,4 @@
-import type { CastEvent } from "@agent-blackbox/core/browser";
+import type { CastEvent } from "@agentrec/core/browser";
 
 export function castDuration(events: readonly CastEvent[]): number {
   const last = events[events.length - 1];

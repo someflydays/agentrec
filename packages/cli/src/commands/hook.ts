@@ -35,8 +35,8 @@ function readStdin(): Promise<string> {
 
 async function forwardHookPayload(): Promise<void> {
   try {
-    const url = process.env.AGENT_BLACKBOX_INGEST_URL;
-    const token = process.env.AGENT_BLACKBOX_INGEST_TOKEN;
+    const url = process.env.AGENTREC_INGEST_URL;
+    const token = process.env.AGENTREC_INGEST_TOKEN;
     if (url === undefined || token === undefined) return;
     const body = await readStdin();
     if (body.length === 0) return;

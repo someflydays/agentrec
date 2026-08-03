@@ -25,7 +25,7 @@ body:
       label: What you would like to happen
       description: Be concrete. A command line, an API shape, or a UI behavior.
       placeholder: |
-        `agent-blackbox grep <pattern>` searching prompts, assistant text, and tool inputs
+        `agentrec grep <pattern>` searching prompts, assistant text, and tool inputs
         across all sessions, printing session id + timestamp per hit.
     validations:
       required: true

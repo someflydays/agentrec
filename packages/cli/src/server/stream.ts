@@ -7,7 +7,7 @@ import {
   type SessionMeta,
   type SessionStore,
   type StreamMessage,
-} from "@agent-blackbox/core";
+} from "@agentrec/core";
 
 /**
  * The recorder appends to events.jsonl and terminal.cast from a separate

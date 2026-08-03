@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { API_ROUTES, type SessionStore } from "@agent-blackbox/core";
+import { API_ROUTES, type SessionStore } from "@agentrec/core";
 import {
   handleSessionCast,
   handleSessionDetail,

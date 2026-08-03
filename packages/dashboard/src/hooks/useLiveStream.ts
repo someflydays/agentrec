@@ -1,4 +1,4 @@
-import { API_ROUTES, type SessionEvent, type StreamMessage } from "@agent-blackbox/core/browser";
+import { API_ROUTES, type SessionEvent, type StreamMessage } from "@agentrec/core/browser";
 import { useEffect, useRef } from "react";
 
 export interface LiveStreamHandlers {

@@ -1,4 +1,4 @@
-import type { SessionSummary } from "@agent-blackbox/core/browser";
+import type { SessionSummary } from "@agentrec/core/browser";
 import type { ReactElement } from "react";
 import { formatCost, formatCount, formatTokens, shortModel } from "../lib/format";
 

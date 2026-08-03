@@ -1,6 +1,6 @@
 # Security and privacy model
 
-Agent Black Box records your development sessions. That is inherently sensitive, so this document
+agentrec records your development sessions. That is inherently sensitive, so this document
 states plainly what is captured, what is not, where it goes, and what you should check before
 sharing a recording.
 
@@ -67,21 +67,21 @@ the tool output.
 ## Where data lives
 
 ```text
-~/.agent-blackbox/sessions/<ulid>/{meta.json, events.jsonl, terminal.cast}
+~/.agentrec/sessions/<ulid>/{meta.json, events.jsonl, terminal.cast}
 ```
 
-- Override the root with `AGENT_BLACKBOX_HOME`. Nothing is written outside it.
+- Override the root with `AGENTREC_HOME`. Nothing is written outside it.
 - Files are written with your user's default permissions, like any file your shell creates. On a
   shared machine, review the mode of the directory yourself if that matters to you.
 - There is no database, index, or cache elsewhere on disk. Deleting a session directory deletes the
-  recording completely. Deleting `~/.agent-blackbox` removes everything.
+  recording completely. Deleting `~/.agentrec` removes everything.
 - There is no retention policy and no automatic pruning. Recordings persist until you remove them.
 
 ## Network posture
 
 - **Recording makes no network calls.** The recorder only spawns a child process and writes files.
   (The wrapped `claude` talks to Anthropic, as it always does — that is unchanged, and unrelated.)
-- **`agent-blackbox ui` binds `127.0.0.1`**, not `0.0.0.0`. It is not reachable from your LAN, and
+- **`agentrec ui` binds `127.0.0.1`**, not `0.0.0.0`. It is not reachable from your LAN, and
   no port-forwarding or tunnel is set up on your behalf.
 - The dashboard is served from the same origin as its API. All routes are local reads: session list,
   session detail, events, raw cast, and a server-sent-events stream for live sessions.
@@ -95,7 +95,7 @@ the tool output.
 
 Claude Code can run an external command at lifecycle points. To capture structured events, the
 recorder builds a hook configuration in memory and hands it to the child process using Claude Code's
-`--settings` flag, pointing the hooks at `agent-blackbox hook`.
+`--settings` flag, pointing the hooks at `agentrec hook`.
 
 Why this matters for security:
 
@@ -106,7 +106,7 @@ Why this matters for security:
   If the recorder crashes, there is no half-written config to clean up and no hook left behind that
   keeps recording.
 - **Recording is opt-in per command.** A session is recorded because you typed
-  `agent-blackbox claude`. Running plain `claude` records nothing.
+  `agentrec claude`. Running plain `claude` records nothing.
 - **The hook receiver is a local process** invoked by Claude Code with a payload on stdin. It appends
   to the session log and does nothing else — no network, no shelling out to user-supplied strings.
 
@@ -160,8 +160,8 @@ dashboard. Two things to know:
 To keep a received session out of your own store entirely, point the store elsewhere:
 
 ```bash
-AGENT_BLACKBOX_HOME=/tmp/abb-review agent-blackbox open theirs.agentlog
-AGENT_BLACKBOX_HOME=/tmp/abb-review agent-blackbox ui
+AGENTREC_HOME=/tmp/abb-review agentrec open theirs.agentlog
+AGENTREC_HOME=/tmp/abb-review agentrec ui
 ```
 
 ## Known gaps

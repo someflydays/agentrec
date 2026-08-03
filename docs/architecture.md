@@ -1,15 +1,15 @@
 # Architecture
 
-How Agent Black Box records a Claude Code session, where the data goes, and why it is shaped the
+How agentrec records a Claude Code session, where the data goes, and why it is shaped the
 way it is.
 
 ## Components
 
 | Package                     | Responsibility                                                                                  |
 | --------------------------- | ----------------------------------------------------------------------------------------------- |
-| `@agent-blackbox/core`      | The format. Event schema, session storage, asciicast reader/writer, pricing, summaries, HTTP API contract. No opinions about the CLI or the UI. |
-| `@agent-blackbox/cli`       | The recorder (`claude` in a PTY), the hook receiver, the local dashboard server, `.agentlog` import/export. |
-| `@agent-blackbox/dashboard` | The React replay UI: session list, event timeline, xterm.js terminal player, cost breakdown.      |
+| `@agentrec/core`      | The format. Event schema, session storage, asciicast reader/writer, pricing, summaries, HTTP API contract. No opinions about the CLI or the UI. |
+| `agentrec`       | The recorder (`claude` in a PTY), the hook receiver, the local dashboard server, `.agentlog` import/export. |
+| `@agentrec/dashboard` | The React replay UI: session list, event timeline, xterm.js terminal player, cost breakdown.      |
 
 `core` ships two entry points. The default export needs Node (filesystem, zlib); the `./browser`
 subpath export is deliberately dependency-free data handling — event types, asciicast parsing,
@@ -23,7 +23,7 @@ and the redundancy is the point.
 
 ### 1. The PTY: ground truth of what you saw
 
-`agent-blackbox claude` spawns the real `claude` binary attached to a pseudo-terminal and proxies it
+`agentrec claude` spawns the real `claude` binary attached to a pseudo-terminal and proxies it
 to your actual terminal. Claude Code stays a full interactive TUI: same rendering, same keybindings,
 same behavior. Everything the child writes is teed into `terminal.cast`.
 
@@ -41,7 +41,7 @@ never echoed to the screen.
 
 Claude Code can invoke an external command at defined lifecycle points. The recorder passes a
 generated hook configuration to the child process using the `--settings` flag, pointing those hooks
-at `agent-blackbox hook`. Claude Code executes it with the hook payload on stdin; the receiver
+at `agentrec hook`. Claude Code executes it with the hook payload on stdin; the receiver
 normalizes that payload into session events and appends them to the log.
 
 This channel gives the structure the PTY cannot: prompts as text, each tool call with its real
@@ -65,10 +65,10 @@ Token usage only exists here, which makes this channel the sole basis for the co
 
 ```mermaid
 flowchart TB
-  subgraph rec["one process: agent-blackbox claude"]
+  subgraph rec["one process: agentrec claude"]
     direction TB
     PTY["PTY host<br/>spawns the real claude"]
-    HOOK["agent-blackbox hook<br/>invoked by Claude Code"]
+    HOOK["agentrec hook<br/>invoked by Claude Code"]
     TAIL["transcript tailer<br/>TranscriptParser"]
     W["SessionWriter<br/>owns seq and the clock"]
     HOOK -->|"prompt · tool.start · tool.end<br/>file.change · notification · turn.end"| W
@@ -83,7 +83,7 @@ flowchart TB
   CAST --> DIR
   EV --> DIR
   META --> DIR
-  DIR[("~/.agent-blackbox/sessions/ULID/")]
+  DIR[("~/.agentrec/sessions/ULID/")]
 
   DIR --> SRV["ui server<br/>bound to 127.0.0.1"]
   SRV -->|"REST + SSE"| SPA["dashboard<br/>timeline + xterm.js"]
@@ -133,7 +133,7 @@ Session ids are ULIDs. They sort lexicographically by creation time, so `readdir
 chronological order and listing needs no index. They are collision-free without coordination, which
 matters because two recordings can start in the same second in different terminals. And they are
 case-insensitively prefix-searchable: `SessionStore.resolveId` accepts any unambiguous prefix, so
-you type `agent-blackbox export 01K1YQ7P8Z` instead of all 26 characters. An auto-incrementing
+you type `agentrec export 01K1YQ7P8Z` instead of all 26 characters. An auto-incrementing
 integer would have required a shared counter; a UUID v4 would have sorted randomly.
 
 ### asciinema v2 for the terminal channel

@@ -5,7 +5,7 @@ import {
   type SessionListResponse,
   type SessionStore,
   summarizeSession,
-} from "@agent-blackbox/core";
+} from "@agentrec/core";
 import { sendError, sendJson, sendText } from "./http.js";
 
 /** Resolves an id or unambiguous prefix, answering 404 itself when it cannot. */

@@ -1,11 +1,11 @@
 <div align="center">
 
-# Agent Black Box
+# agentrec
 
-**Git has history for your code. Agent Black Box has history for how it was made.**
+**Git has history for your code. agentrec has history for how it was made.**
 
-[![CI](https://github.com/PLACEHOLDER_GH_OWNER/agent-blackbox/actions/workflows/ci.yml/badge.svg)](https://github.com/PLACEHOLDER_GH_OWNER/agent-blackbox/actions/workflows/ci.yml)
-[![npm](https://img.shields.io/npm/v/@agent-blackbox/cli.svg?color=cb3837)](https://www.npmjs.com/package/@agent-blackbox/cli)
+[![CI](https://github.com/PLACEHOLDER_GH_OWNER/agentrec/actions/workflows/ci.yml/badge.svg)](https://github.com/PLACEHOLDER_GH_OWNER/agentrec/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/agentrec.svg?color=cb3837)](https://www.npmjs.com/package/agentrec)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%E2%89%A520.19-3fb950.svg)](package.json)
 
@@ -17,7 +17,7 @@
 
 A Claude Code session is the most detailed record of how a change got made — and it evaporates the
 moment you close the terminal. Scrollback truncates, tool calls scroll past unrecorded, and "why did
-it touch that file?" becomes unanswerable an hour later. Agent Black Box wraps the real `claude` CLI
+it touch that file?" becomes unanswerable an hour later. agentrec wraps the real `claude` CLI
 in a PTY and records the whole session locally on three synchronized channels: the terminal
 exactly as you saw it, every tool call with its inputs and outputs, and per-request token usage.
 You get a replayable, scrubbable, shareable session — one file you can attach to a bug report so
@@ -26,22 +26,22 @@ someone else can watch what actually happened.
 ## Quick start
 
 ```bash
-npm install -g @agent-blackbox/cli   # 1. install (Node >= 20.19)
-agent-blackbox claude                # 2. record — claude behaves exactly as it always does
-agent-blackbox ui                    # 3. replay in a local dashboard
+npm install -g agentrec   # 1. install (Node >= 20.19)
+agentrec claude                # 2. record — claude behaves exactly as it always does
+agentrec ui                    # 3. replay in a local dashboard
 ```
 
-Recordings land in `~/.agent-blackbox`. List them at any time:
+Recordings land in `~/.agentrec`. List them at any time:
 
 ```console
-$ agent-blackbox ls
+$ agentrec ls
 ID          TITLE                         AGE  DUR  PROMPTS  TOOLS  TOKENS  COST
 01K1YQ7P8Z  Add watchdog timer to poller  4m   12m        3     41  284.1k  $0.42
 01K1YMT3XR  Fix flaky auth test           2h    6m        2     18   96.4k  $0.15
 ```
 
 No account, no daemon, no config file to write. `abb` is installed as a shorter alias, and
-`npx @agent-blackbox/cli claude` works for a one-off recording without installing anything.
+`npx agentrec claude` works for a one-off recording without installing anything.
 
 ## Features
 
@@ -57,7 +57,7 @@ No account, no daemon, no config file to write. `abb` is installed as a shorter 
 - Live sessions stream into the dashboard over SSE while they are still running.
 - `export` bundles a session into one portable `.agentlog` file; `open` imports it anywhere.
 - Everything is local: no telemetry, no network calls, dashboard bound to `127.0.0.1`.
-- `agent-blackbox ls --json` for scripting.
+- `agentrec ls --json` for scripting.
 
 ## How it works
 
@@ -68,9 +68,9 @@ flowchart LR
   A["1 · terminal output<br/>asciinema v2 cast"]
   B["2 · injected hooks<br/>prompts · tools · diffs"]
   C["3 · transcript tail<br/>text · tokens · title"]
-  S[("session store<br/>~/.agent-blackbox")]
-  D["agent-blackbox ui<br/>replay on 127.0.0.1"]
-  E["agent-blackbox export<br/>one .agentlog file"]
+  S[("session store<br/>~/.agentrec")]
+  D["agentrec ui<br/>replay on 127.0.0.1"]
+  E["agentrec export<br/>one .agentlog file"]
 
   Y --> P
   P --> A
@@ -81,7 +81,7 @@ flowchart LR
   C --> S
   S --> D
   S --> E
-  E -.->|"agent-blackbox open"| S
+  E -.->|"agentrec open"| S
 ```
 
 The three channels exist because no single one is sufficient. The PTY is ground truth for what you
@@ -97,7 +97,7 @@ never read, written, or modified.
 ## The session format
 
 Each session is a directory named after a [ULID](https://github.com/ulid/spec) — sortable by start
-time — under `~/.agent-blackbox/sessions/`:
+time — under `~/.agentrec/sessions/`:
 
 | File            | What it is                                                              |
 | --------------- | ----------------------------------------------------------------------- |
@@ -107,7 +107,7 @@ time — under `~/.agent-blackbox/sessions/`:
 
 `terminal.cast` is a plain asciicast, so `asciinema play`, `agg`, and anything else in that
 ecosystem works on it directly — the dashboard is a convenience, not a lock-in. Set
-`AGENT_BLACKBOX_HOME` to store sessions somewhere other than `~/.agent-blackbox`.
+`AGENTREC_HOME` to store sessions somewhere other than `~/.agentrec`.
 
 The full spec, including every event type and its payload shape, is in
 [docs/format.md](docs/format.md).
@@ -119,9 +119,9 @@ The full spec, including every event type and its payload shape, is in
 you recorded yourself.
 
 ```bash
-agent-blackbox export 01K1YQ7P8Z       # pack one session into a .agentlog file
-agent-blackbox open watchdog.agentlog  # unpack someone else's back into your store
-agent-blackbox ui                      # replay it exactly like your own
+agentrec export 01K1YQ7P8Z       # pack one session into a .agentlog file
+agentrec open watchdog.agentlog  # unpack someone else's back into your store
+agentrec ui                      # replay it exactly like your own
 ```
 
 Session ids can be given as an unambiguous prefix, so `01K1YQ7P8Z` is enough. Attach the
@@ -138,7 +138,7 @@ The recorder is local-only by construction:
   secret you typed that the terminal did not echo never reaches disk.
 - **Your Claude Code config is untouched.** Hooks are passed per-invocation via `--settings`;
   the recorder does not modify `~/.claude/settings.json` or any project settings file.
-- **Everything stays in one directory.** `~/.agent-blackbox` (or `AGENT_BLACKBOX_HOME`). Deleting a
+- **Everything stays in one directory.** `~/.agentrec` (or `AGENTREC_HOME`). Deleting a
   session directory deletes the recording.
 
 What a recording *does* contain is whatever was on screen, plus tool inputs and outputs, your
@@ -151,7 +151,7 @@ Full threat model, including exactly what is and is not captured:
 
 ## How it compares
 
-|                          | Agent Black Box       | Terminal scrollback | asciinema alone | Claude Code transcripts | Screen recording |
+|                          | agentrec       | Terminal scrollback | asciinema alone | Claude Code transcripts | Screen recording |
 | ------------------------ | --------------------- | ------------------- | --------------- | ----------------------- | ---------------- |
 | Structured tool timeline | Yes                   | No                  | No              | Raw JSONL, no timeline  | No               |
 | Terminal replay          | Yes                   | No                  | Yes             | No                      | Yes, as video    |
@@ -159,7 +159,7 @@ Full threat model, including exactly what is and is not captured:
 | Shareable single file    | Yes, `.agentlog`      | Copy-paste          | Yes, `.cast`    | Machine-local paths     | Large video file |
 | Works offline            | Yes                   | Yes                 | Yes             | Yes                     | Yes              |
 
-asciinema is the closest neighbor, and Agent Black Box uses its format on purpose — the difference
+asciinema is the closest neighbor, and agentrec uses its format on purpose — the difference
 is the other two channels layered on the same clock.
 
 ## Roadmap
@@ -182,9 +182,9 @@ The monorepo is three packages:
 
 | Package                     | Role                                        |
 | --------------------------- | ------------------------------------------- |
-| `@agent-blackbox/core`      | Session format, event schema, storage       |
-| `@agent-blackbox/cli`       | Recorder, dashboard server, `.agentlog` I/O |
-| `@agent-blackbox/dashboard` | React replay UI                             |
+| `@agentrec/core`      | Session format, event schema, storage       |
+| `agentrec`       | Recorder, dashboard server, `.agentlog` I/O |
+| `@agentrec/dashboard` | React replay UI                             |
 
 ## License
 

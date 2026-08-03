@@ -21,14 +21,14 @@ pnpm -r build      # core and dashboard must be built before the CLI can run
 Then run the CLI straight out of the workspace:
 
 ```bash
-node packages/cli/bin/agent-blackbox.js ls
-node packages/cli/bin/agent-blackbox.js ui
+node packages/cli/bin/agentrec.js ls
+node packages/cli/bin/agentrec.js ui
 ```
 
 An alias saves a lot of typing while you work:
 
 ```bash
-alias abbdev="node $(pwd)/packages/cli/bin/agent-blackbox.js"
+alias abbdev="node $(pwd)/packages/cli/bin/agentrec.js"
 ```
 
 ## Commands
@@ -47,11 +47,11 @@ Scope to one package while iterating:
 
 | Command                                              | What it does                    |
 | ---------------------------------------------------- | ------------------------------- |
-| `pnpm --filter @agent-blackbox/core build`           | Build core (tsup)               |
-| `pnpm --filter @agent-blackbox/core test`            | Core tests once                 |
-| `pnpm --filter @agent-blackbox/core exec vitest`     | Core tests in watch mode        |
-| `pnpm --filter @agent-blackbox/cli typecheck`        | Typecheck the CLI               |
-| `pnpm --filter @agent-blackbox/dashboard build`      | Build the dashboard (vite)      |
+| `pnpm --filter @agentrec/core build`           | Build core (tsup)               |
+| `pnpm --filter @agentrec/core test`            | Core tests once                 |
+| `pnpm --filter @agentrec/core exec vitest`     | Core tests in watch mode        |
+| `pnpm --filter agentrec typecheck`        | Typecheck the CLI               |
+| `pnpm --filter @agentrec/dashboard build`      | Build the dashboard (vite)      |
 
 Formatting is Biome's job, not yours: 100-column lines, two-space indent, double quotes,
 semicolons, trailing commas. Run `pnpm lint:fix` before pushing and don't hand-tune style.
@@ -60,12 +60,12 @@ semicolons, trailing commas. Run `pnpm lint:fix` before pushing and don't hand-t
 
 | Path                            | Contents                                                                     |
 | ------------------------------- | ---------------------------------------------------------------------------- |
-| `packages/core/`                | `@agent-blackbox/core` — event schema, session storage, asciicast read/write, pricing, summaries, HTTP API contract |
+| `packages/core/`                | `@agentrec/core` — event schema, session storage, asciicast read/write, pricing, summaries, HTTP API contract |
 | `packages/core/src/types.ts`    | The event schema. Changing this changes the recorded format.                   |
 | `packages/core/src/browser.ts`  | Browser-safe entry point. Must stay free of `node:` imports.                   |
-| `packages/cli/`                 | `@agent-blackbox/cli` — recorder, hook receiver, dashboard server, export/import |
+| `packages/cli/`                 | `agentrec` — recorder, hook receiver, dashboard server, export/import |
 | `packages/cli/src/commands/`    | One file per subcommand, each exporting a `register*Command(program)`           |
-| `packages/dashboard/`           | `@agent-blackbox/dashboard` — React + xterm.js replay UI                       |
+| `packages/dashboard/`           | `@agentrec/dashboard` — React + xterm.js replay UI                       |
 | `docs/`                         | Architecture, format spec, security model                                      |
 | `fixtures/sessions/`            | Recorded sessions used for development. Excluded from lint and formatting so the data stays byte-exact. |
 
@@ -74,7 +74,7 @@ Two structural rules worth knowing before you start:
 1. **`packages/core/src/browser.ts` must not import anything from `node:`.** The dashboard bundles
    it. Filesystem and zlib code belongs in the Node-only entry point.
 2. **The CLI depends on the dashboard's built output.** If the UI renders stale, you forgot
-   `pnpm --filter @agent-blackbox/dashboard build`.
+   `pnpm --filter @agentrec/dashboard build`.
 
 ## Running the dashboard in dev mode
 
@@ -83,10 +83,10 @@ and proxies `/api` to the CLI (see `packages/dashboard/vite.config.ts`).
 
 ```bash
 # Terminal 1 — API only, on the port the Vite proxy expects
-node packages/cli/bin/agent-blackbox.js ui --port 4040 --no-open
+node packages/cli/bin/agentrec.js ui --port 4040 --no-open
 
 # Terminal 2 — Vite dev server, hot reload
-pnpm --filter @agent-blackbox/dashboard dev
+pnpm --filter @agentrec/dashboard dev
 ```
 
 Open the URL Vite prints, not port 4040. The proxy is hardcoded to `127.0.0.1:4040`, so use exactly
@@ -94,18 +94,18 @@ that port in terminal 1.
 
 ### Developing against fixed data
 
-`AGENT_BLACKBOX_HOME` relocates the session store, which is the easiest way to work against a stable
+`AGENTREC_HOME` relocates the session store, which is the easiest way to work against a stable
 set of sessions instead of whatever you happen to have recorded:
 
 ```bash
-AGENT_BLACKBOX_HOME=$(pwd)/fixtures node packages/cli/bin/agent-blackbox.js ui --port 4040 --no-open
+AGENTREC_HOME=$(pwd)/fixtures node packages/cli/bin/agentrec.js ui --port 4040 --no-open
 ```
 
 That reads `fixtures/sessions/<ulid>/`. Point the same variable at a scratch directory when you want
-to record throwaway sessions without touching your real `~/.agent-blackbox`:
+to record throwaway sessions without touching your real `~/.agentrec`:
 
 ```bash
-AGENT_BLACKBOX_HOME=/tmp/abb-scratch node packages/cli/bin/agent-blackbox.js claude
+AGENTREC_HOME=/tmp/abb-scratch node packages/cli/bin/agentrec.js claude
 ```
 
 To add a fixture, record a session and export/import it into `fixtures`, or copy a session directory

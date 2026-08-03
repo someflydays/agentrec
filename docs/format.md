@@ -4,7 +4,7 @@ A recorded session is a directory. Nothing about reading one requires this proje
 files are JSON, JSONL, and a standard asciicast.
 
 ```text
-~/.agent-blackbox/                     # or $AGENT_BLACKBOX_HOME
+~/.agentrec/                     # or $AGENTREC_HOME
 └── sessions/
     └── 01K1YQ7P8ZC3M4N5R6S7T8V9W0/    # ULID, sortable by start time
         ├── meta.json                  # session identity and outcome

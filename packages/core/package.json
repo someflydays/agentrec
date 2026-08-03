@@ -1,7 +1,7 @@
 {
-  "name": "@agent-blackbox/core",
+  "name": "@agentrec/core",
   "version": "0.1.0",
-  "description": "Session format, event schema, and storage for Agent Black Box",
+  "description": "Session format, event schema, and storage for agentrec",
   "license": "MIT",
   "type": "module",
   "exports": {

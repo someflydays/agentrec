@@ -10,7 +10,7 @@ import { cliVersion } from "./version.js";
 const program = new Command();
 
 program
-  .name("agent-blackbox")
+  .name("agentrec")
   .description("Flight recorder for Claude Code sessions: record, replay, share")
   .version(cliVersion())
   .enablePositionalOptions();
@@ -22,7 +22,7 @@ registerExportCommand(program);
 registerOpenCommand(program);
 registerHookCommand(program);
 
-// Sugar: `agent-blackbox claude [...]` records a claude session directly.
+// Sugar: `agentrec claude [...]` records a claude session directly.
 const argv = [...process.argv];
 if (argv[2] === "claude") {
   argv.splice(2, 0, "record");
@@ -30,6 +30,6 @@ if (argv[2] === "claude") {
 
 program.parseAsync(argv).catch((error: unknown) => {
   const message = error instanceof Error ? error.message : String(error);
-  console.error(`agent-blackbox: ${message}`);
+  console.error(`agentrec: ${message}`);
   process.exitCode = 1;
 });

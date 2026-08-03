@@ -24,9 +24,9 @@ export const EVENTS_FILE = "events.jsonl";
 export const CAST_FILE = "terminal.cast";
 
 export function defaultStoreRoot(env: NodeJS.ProcessEnv = process.env): string {
-  const override = env.AGENT_BLACKBOX_HOME;
+  const override = env.AGENTREC_HOME;
   if (override && override.length > 0) return override;
-  return join(homedir(), ".agent-blackbox");
+  return join(homedir(), ".agentrec");
 }
 
 function writeFileAtomic(path: string, contents: string): void {

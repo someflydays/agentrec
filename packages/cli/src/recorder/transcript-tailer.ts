@@ -1,6 +1,6 @@
 import { closeSync, openSync, readSync, statSync } from "node:fs";
 import { StringDecoder } from "node:string_decoder";
-import { type SessionWriter, TranscriptParser } from "@agent-blackbox/core";
+import { type SessionWriter, TranscriptParser } from "@agentrec/core";
 
 /**
  * Claude Code appends to its JSONL transcript as it streams. Polling by size

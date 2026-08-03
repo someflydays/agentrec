@@ -1,4 +1,4 @@
-import type { SessionSummary } from "@agent-blackbox/core/browser";
+import type { SessionSummary } from "@agentrec/core/browser";
 import { type ReactElement, useCallback, useEffect, useState } from "react";
 import { fetchSessions } from "./api";
 import { SessionView } from "./components/SessionView";
@@ -80,7 +80,7 @@ function Welcome(props: { loading: boolean; error: string | null }): ReactElemen
         Start a session through the recorder and every prompt, tool call, file change and terminal
         frame lands here.
       </p>
-      <code className="command">agent-blackbox claude</code>
+      <code className="command">agentrec claude</code>
     </div>
   );
 }

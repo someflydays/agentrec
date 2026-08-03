@@ -255,15 +255,15 @@ describe("SessionStore", () => {
 });
 
 describe("defaultStoreRoot", () => {
-  it("honors AGENT_BLACKBOX_HOME", () => {
-    expect(defaultStoreRoot({ AGENT_BLACKBOX_HOME: "/custom/blackbox" })).toBe("/custom/blackbox");
+  it("honors AGENTREC_HOME", () => {
+    expect(defaultStoreRoot({ AGENTREC_HOME: "/custom/blackbox" })).toBe("/custom/blackbox");
   });
 
   it("falls back to a directory under the home directory", () => {
-    expect(defaultStoreRoot({})).toBe(join(homedir(), ".agent-blackbox"));
+    expect(defaultStoreRoot({})).toBe(join(homedir(), ".agentrec"));
   });
 
   it("treats an empty override as unset", () => {
-    expect(defaultStoreRoot({ AGENT_BLACKBOX_HOME: "" })).toBe(join(homedir(), ".agent-blackbox"));
+    expect(defaultStoreRoot({ AGENTREC_HOME: "" })).toBe(join(homedir(), ".agentrec"));
   });
 });

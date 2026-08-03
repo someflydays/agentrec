@@ -1,4 +1,4 @@
-import { SessionStore, type SessionSummary, summarizeSession } from "@agent-blackbox/core";
+import { SessionStore, type SessionSummary, summarizeSession } from "@agentrec/core";
 import type { Command } from "commander";
 import pc from "picocolors";
 import {
@@ -64,9 +64,7 @@ export function registerLsCommand(program: Command): void {
         return;
       }
       if (summaries.length === 0) {
-        console.log(
-          `No sessions recorded yet. Start one with ${pc.bold("agent-blackbox claude")}.`,
-        );
+        console.log(`No sessions recorded yet. Start one with ${pc.bold("agentrec claude")}.`);
         return;
       }
 

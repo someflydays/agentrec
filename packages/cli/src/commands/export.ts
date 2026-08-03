@@ -1,6 +1,6 @@
 import { statSync } from "node:fs";
 import { resolve } from "node:path";
-import { AGENTLOG_EXTENSION, exportSession, SessionStore } from "@agent-blackbox/core";
+import { AGENTLOG_EXTENSION, exportSession, SessionStore } from "@agentrec/core";
 import type { Command } from "commander";
 import pc from "picocolors";
 import { formatBytes } from "../format.js";

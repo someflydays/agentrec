@@ -7,7 +7,7 @@ body:
       value: |
         Before filing, please check whether anything you paste here contains secrets or
         proprietary code. Recordings capture whatever was on screen — see
-        [docs/security.md](https://github.com/PLACEHOLDER_GH_OWNER/agent-blackbox/blob/main/docs/security.md).
+        [docs/security.md](https://github.com/PLACEHOLDER_GH_OWNER/agentrec/blob/main/docs/security.md).
 
   - type: textarea
     id: what-happened
@@ -15,7 +15,7 @@ body:
       label: What happened
       description: The actual behavior, including any error output.
       placeholder: |
-        `agent-blackbox ui` shows the timeline but the terminal player stays blank.
+        `agentrec ui` shows the timeline but the terminal player stays blank.
         Console error: ...
     validations:
       required: true
@@ -33,9 +33,9 @@ body:
       label: Steps to reproduce
       description: Numbered steps, starting from a clean state if you can.
       placeholder: |
-        1. agent-blackbox claude
+        1. agentrec claude
         2. Ask it to edit a file, then exit
-        3. agent-blackbox ui
+        3. agentrec ui
         4. Open the session — terminal pane is empty
     validations:
       required: true
@@ -44,7 +44,7 @@ body:
     id: version
     attributes:
       label: Version
-      description: Output of `agent-blackbox --version`.
+      description: Output of `agentrec --version`.
       placeholder: "0.1.0"
     validations:
       required: true

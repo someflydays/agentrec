@@ -1,4 +1,4 @@
-import type { Cast, CastEvent } from "@agent-blackbox/core/browser";
+import type { Cast, CastEvent } from "@agentrec/core/browser";
 import { Terminal } from "@xterm/xterm";
 import { type ReactElement, type RefObject, useCallback, useEffect, useRef, useState } from "react";
 import { castDuration, parseResize } from "../lib/cast";

@@ -17,10 +17,10 @@ importers:
 
   packages/cli:
     dependencies:
-      '@agent-blackbox/core':
+      '@agentrec/core':
         specifier: workspace:*
         version: link:../core
-      '@agent-blackbox/dashboard':
+      '@agentrec/dashboard':
         specifier: workspace:*
         version: link:../dashboard
       '@lydell/node-pty':
@@ -67,7 +67,7 @@ importers:
 
   packages/dashboard:
     devDependencies:
-      '@agent-blackbox/core':
+      '@agentrec/core':
         specifier: workspace:*
         version: link:../core
       '@types/react':

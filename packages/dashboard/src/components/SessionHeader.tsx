@@ -1,4 +1,4 @@
-import type { SessionDetailResponse } from "@agent-blackbox/core/browser";
+import type { SessionDetailResponse } from "@agentrec/core/browser";
 import type { ReactElement } from "react";
 import {
   formatCost,

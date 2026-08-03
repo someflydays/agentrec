@@ -15,15 +15,15 @@ fixtures/
 ## View it
 
 ```sh
-AGENT_BLACKBOX_HOME=$(pwd)/fixtures agent-blackbox ui
+AGENTREC_HOME=$(pwd)/fixtures agentrec ui
 ```
 
-`SessionStore` treats `AGENT_BLACKBOX_HOME` as the store root and looks for
+`SessionStore` treats `AGENTREC_HOME` as the store root and looks for
 sessions under `<root>/sessions`, so pointing it at `fixtures/` is all it takes.
 The same variable works with the other subcommands, for example:
 
 ```sh
-AGENT_BLACKBOX_HOME=$(pwd)/fixtures agent-blackbox ls
+AGENTREC_HOME=$(pwd)/fixtures agentrec ls
 ```
 
 ## What is in it

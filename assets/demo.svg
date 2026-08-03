@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 460" width="880" height="460" role="img" aria-labelledby="abbTitle abbDesc">
-  <title id="abbTitle">Agent Black Box</title>
-  <desc id="abbDesc">A terminal running "agent-blackbox claude" records a Claude Code session: a prompt, a Bash tool call, a file edit, and a completed turn. Then "agent-blackbox ui" replays it on a scrubbable timeline.</desc>
+  <title id="abbTitle">agentrec</title>
+  <desc id="abbDesc">A terminal running "agentrec claude" records a Claude Code session: a prompt, a Bash tool call, a file edit, and a completed turn. Then "agentrec ui" replays it on a scrubbable timeline.</desc>
 
   <style>
     .m { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 15px; }
@@ -11,12 +11,12 @@
   <defs>
   <clipPath id="clipA">
     <rect x="44" y="88" width="207" height="24">
-      <animate attributeName="width" dur="12s" repeatCount="indefinite" calcMode="discrete" keyTimes="0;0;0.00471;0.00942;0.01413;0.01884;0.02355;0.02826;0.03297;0.03768;0.04239;0.0471;0.05181;0.05652;0.06123;0.06594;0.07065;0.07536;0.08007;0.08478;0.08949;0.0942;0.09891;0.10362;0.10833;0.9875;1" values="0;0;9;18;27;36;45;54;63;72;81;90;99;108;117;126;135;144;153;162;171;180;189;198;207;0;0"/>
+      <animate attributeName="width" dur="12s" repeatCount="indefinite" calcMode="discrete" keyTimes="0;0;0.00471;0.00942;0.01413;0.01884;0.02355;0.02826;0.03297;0.03768;0.04239;0.0471;0.05181;0.05652;0.06123;0.06594;0.07065;0.07536;0.08007;0.9875;1" values="0;0;9;18;27;36;45;54;63;72;81;90;99;108;117;126;135;144;153;0;0"/>
     </rect>
   </clipPath>
   <clipPath id="clipB">
     <rect x="44" y="274" width="171" height="24">
-      <animate attributeName="width" dur="12s" repeatCount="indefinite" calcMode="discrete" keyTimes="0;0.525;0.52961;0.53421;0.53882;0.54342;0.54803;0.55263;0.55724;0.56184;0.56645;0.57105;0.57566;0.58026;0.58487;0.58947;0.59408;0.59868;0.60329;0.60789;0.6125;0.9875;1" values="0;0;9;18;27;36;45;54;63;72;81;90;99;108;117;126;135;144;153;162;171;0;0"/>
+      <animate attributeName="width" dur="12s" repeatCount="indefinite" calcMode="discrete" keyTimes="0;0.525;0.52961;0.53422;0.53883;0.54344;0.54805;0.55266;0.55727;0.56188;0.56649;0.5711;0.57571;0.58032;0.58493;0.9875;1" values="0;0;9;18;27;36;45;54;63;72;81;90;99;108;117;0;0"/>
     </rect>
   </clipPath>
   </defs>
@@ -31,7 +31,7 @@
   <circle cx="40" cy="36" r="5.5" fill="#ff5f57"/>
   <circle cx="62" cy="36" r="5.5" fill="#febc2e"/>
   <circle cx="84" cy="36" r="5.5" fill="#28c840"/>
-  <text x="440" y="40" fill="#576069" class="s" text-anchor="middle">~/dev/poller — agent-blackbox</text>
+  <text x="440" y="40" fill="#576069" class="s" text-anchor="middle">~/dev/poller — agentrec</text>
 
   <!-- status pill: recording during beat 1, replaying during beat 2 -->
   <g opacity="0">
@@ -49,9 +49,9 @@
 
   <!-- beat 1: record -->
   <g clip-path="url(#clipA)">
-    <text x="44" y="104" fill="#e6edf3" class="m"><tspan fill="#3fb950">$</tspan><tspan fill="#e6edf3" dx="9">agent-blackbox</tspan><tspan fill="#e6edf3" dx="9">claude</tspan></text>
+    <text x="44" y="104" fill="#e6edf3" class="m"><tspan fill="#3fb950">$</tspan><tspan fill="#e6edf3" dx="9">agentrec</tspan><tspan fill="#e6edf3" dx="9">claude</tspan></text>
   </g>
-  <rect x="44" y="91" width="8" height="18" fill="#3fb950" opacity="0"><animate attributeName="x" dur="12s" repeatCount="indefinite" calcMode="discrete" keyTimes="0;0;0.00471;0.00942;0.01413;0.01884;0.02355;0.02826;0.03297;0.03768;0.04239;0.0471;0.05181;0.05652;0.06123;0.06594;0.07065;0.07536;0.08007;0.08478;0.08949;0.0942;0.09891;0.10362;0.10833;0.9875;1" values="44;44;53;62;71;80;89;98;107;116;125;134;143;152;161;170;179;188;197;206;215;224;233;242;251;44;44"/><animate attributeName="opacity" dur="12s" repeatCount="indefinite" calcMode="discrete" keyTimes="0;0;0.12333;0.13833;0.15333;1" values="0;1;0;1;0;0"/></rect>
+  <rect x="44" y="91" width="8" height="18" fill="#3fb950" opacity="0"><animate attributeName="x" dur="12s" repeatCount="indefinite" calcMode="discrete" keyTimes="0;0;0.00471;0.00942;0.01413;0.01884;0.02355;0.02826;0.03297;0.03768;0.04239;0.0471;0.05181;0.05652;0.06123;0.06594;0.07065;0.07536;0.08007;0.9875;1" values="44;44;53;62;71;80;89;98;107;116;125;134;143;152;161;170;179;188;197;44;44"/><animate attributeName="opacity" dur="12s" repeatCount="indefinite" calcMode="discrete" keyTimes="0;0;0.12333;0.13833;0.15333;1" values="0;1;0;1;0;0"/></rect>
 
   <g><animate attributeName="opacity" dur="12s" repeatCount="indefinite" keyTimes="0;0.16667;0.19167;0.96667;0.9875;1" values="0;0;1;1;0;0"/>
     <g><animateTransform attributeName="transform" type="translate" dur="12s" repeatCount="indefinite" keyTimes="0;0.16667;0.19167;0.96667;0.9875;1" values="0 7;0 7;0 0;0 0;0 7;0 7"/>
@@ -91,9 +91,9 @@
 
   <!-- beat 2: replay -->
   <g clip-path="url(#clipB)">
-    <text x="44" y="290" fill="#e6edf3" class="m"><tspan fill="#3fb950">$</tspan><tspan fill="#e6edf3" dx="9">agent-blackbox</tspan><tspan fill="#e6edf3" dx="9">ui</tspan></text>
+    <text x="44" y="290" fill="#e6edf3" class="m"><tspan fill="#3fb950">$</tspan><tspan fill="#e6edf3" dx="9">agentrec</tspan><tspan fill="#e6edf3" dx="9">ui</tspan></text>
   </g>
-  <rect x="44" y="277" width="8" height="18" fill="#3fb950" opacity="0"><animate attributeName="x" dur="12s" repeatCount="indefinite" calcMode="discrete" keyTimes="0;0.525;0.52961;0.53421;0.53882;0.54342;0.54803;0.55263;0.55724;0.56184;0.56645;0.57105;0.57566;0.58026;0.58487;0.58947;0.59408;0.59868;0.60329;0.60789;0.6125;0.9875;1" values="44;44;53;62;71;80;89;98;107;116;125;134;143;152;161;170;179;188;197;206;215;44;44"/><animate attributeName="opacity" dur="12s" repeatCount="indefinite" calcMode="discrete" keyTimes="0;0.525;0.6275;0.6425;0.6575;1" values="0;1;0;1;0;0"/></rect>
+  <rect x="44" y="277" width="8" height="18" fill="#3fb950" opacity="0"><animate attributeName="x" dur="12s" repeatCount="indefinite" calcMode="discrete" keyTimes="0;0.525;0.52961;0.53422;0.53883;0.54344;0.54805;0.55266;0.55727;0.56188;0.56649;0.5711;0.57571;0.58032;0.58493;0.9875;1" values="44;44;53;62;71;80;89;98;107;116;125;134;143;152;161;44;44"/><animate attributeName="opacity" dur="12s" repeatCount="indefinite" calcMode="discrete" keyTimes="0;0.525;0.6275;0.6425;0.6575;1" values="0;1;0;1;0;0"/></rect>
 
   <g><animate attributeName="opacity" dur="12s" repeatCount="indefinite" keyTimes="0;0.62917;0.65417;0.96667;0.9875;1" values="0;0;1;1;0;0"/>
     <text x="46" y="322" fill="#3fb950" class="m">&#8594;</text>

@@ -2,7 +2,7 @@ import { existsSync } from "node:fs";
 import { createServer, type Server } from "node:http";
 import { createRequire } from "node:module";
 import { dirname, join, resolve } from "node:path";
-import { SessionStore } from "@agent-blackbox/core";
+import { SessionStore } from "@agentrec/core";
 import pc from "picocolors";
 import { openBrowser } from "./open-browser.js";
 import { createRequestListener } from "./router.js";
@@ -25,7 +25,7 @@ export async function startUiServer(options: UiServerOptions): Promise<Server> {
   const port = await listen(server, options.port);
   const url = `http://${HOST}:${port}`;
 
-  console.log(`${pc.bold("agent-blackbox")} dashboard  ${pc.cyan(url)}`);
+  console.log(`${pc.bold("agentrec")} dashboard  ${pc.cyan(url)}`);
   console.log(pc.dim(`  sessions  ${store.sessionsDir}`));
   console.log(pc.dim("  ctrl-c to stop"));
 
@@ -41,16 +41,16 @@ function resolveDashboardDist(): string {
   const require = createRequire(import.meta.url);
   let packageJsonPath: string;
   try {
-    packageJsonPath = require.resolve("@agent-blackbox/dashboard/package.json");
+    packageJsonPath = require.resolve("@agentrec/dashboard/package.json");
   } catch {
     throw new Error(
-      "dashboard package not found — reinstall agent-blackbox, or run `pnpm --filter @agent-blackbox/dashboard build` in a checkout",
+      "dashboard package not found — reinstall agentrec, or run `pnpm --filter @agentrec/dashboard build` in a checkout",
     );
   }
   const distDir = resolve(dirname(packageJsonPath), "dist");
   if (!existsSync(join(distDir, "index.html"))) {
     throw new Error(
-      `dashboard assets are missing at ${distDir} — build them with \`pnpm --filter @agent-blackbox/dashboard build\``,
+      `dashboard assets are missing at ${distDir} — build them with \`pnpm --filter @agentrec/dashboard build\``,
     );
   }
   return distDir;

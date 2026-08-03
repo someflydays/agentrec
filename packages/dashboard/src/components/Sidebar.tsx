@@ -1,4 +1,4 @@
-import type { SessionSummary } from "@agent-blackbox/core/browser";
+import type { SessionSummary } from "@agentrec/core/browser";
 import type { ReactElement } from "react";
 import { formatCost, formatDuration, formatRelativeTime, shortId } from "../lib/format";
 
@@ -26,7 +26,7 @@ export function Sidebar(props: SidebarProps): ReactElement {
       {sessions !== null && sessions.length === 0 ? (
         <div className="sidebar-empty">
           <p>No recordings yet. Wrap a Claude Code session:</p>
-          <code className="command">agent-blackbox claude</code>
+          <code className="command">agentrec claude</code>
         </div>
       ) : null}
       <ul className="session-list">

@@ -1,4 +1,4 @@
-import type { SessionEvent } from "@agent-blackbox/core/browser";
+import type { SessionEvent } from "@agentrec/core/browser";
 
 export interface PromptRow {
   kind: "prompt";

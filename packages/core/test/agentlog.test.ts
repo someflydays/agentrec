@@ -21,7 +21,7 @@ const STARTED_AT = "2026-08-01T17:03:12.000Z";
 
 const CAST_TEXT = [
   '{"version":2,"width":120,"height":32,"timestamp":1785949392,"title":"demo"}',
-  '[0.000000, "o", "\\u001b[1mAgent Black Box\\u001b[0m\\r\\n"]',
+  '[0.000000, "o", "\\u001b[1magentrec\\u001b[0m\\r\\n"]',
   '[1.500000, "r", "120x32"]',
   "",
 ].join("\n");

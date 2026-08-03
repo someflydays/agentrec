@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { importBundle, SessionStore, unpackBundle } from "@agent-blackbox/core";
+import { importBundle, SessionStore, unpackBundle } from "@agentrec/core";
 import type { Command } from "commander";
 import pc from "picocolors";
 
@@ -21,6 +21,6 @@ export function registerOpenCommand(program: Command): void {
       }
       const id = importBundle(store, bundle, { overwrite: true });
       console.log(`imported ${id}`);
-      console.log(pc.dim("replay it with: agent-blackbox ui"));
+      console.log(pc.dim("replay it with: agentrec ui"));
     });
 }

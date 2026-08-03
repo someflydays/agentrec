@@ -3,7 +3,7 @@ import {
   parseCast,
   type SessionDetailResponse,
   type SessionEvent,
-} from "@agent-blackbox/core/browser";
+} from "@agentrec/core/browser";
 import { type ReactElement, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { fetchCast, fetchEvents, fetchSession } from "../api";
 import { useLiveStream } from "../hooks/useLiveStream";

@@ -1,12 +1,11 @@
 {
-  "name": "@agent-blackbox/cli",
+  "name": "agentrec",
   "version": "0.1.0",
   "description": "Flight recorder for Claude Code sessions: record, replay, and share exactly what your coding agent did",
   "license": "MIT",
   "type": "module",
   "bin": {
-    "agent-blackbox": "./bin/agent-blackbox.js",
-    "abb": "./bin/agent-blackbox.js"
+    "agentrec": "./bin/agentrec.js"
   },
   "files": [
     "bin",
@@ -21,8 +20,8 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
-    "@agent-blackbox/core": "workspace:*",
-    "@agent-blackbox/dashboard": "workspace:*",
+    "@agentrec/core": "workspace:*",
+    "@agentrec/dashboard": "workspace:*",
     "@lydell/node-pty": "^1.1.0",
     "commander": "^15.0.0",
     "picocolors": "^1.1.1"

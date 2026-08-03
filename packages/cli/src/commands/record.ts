@@ -1,6 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { type SessionMeta, SessionStore, summarizeSession } from "@agent-blackbox/core";
+import { type SessionMeta, SessionStore, summarizeSession } from "@agentrec/core";
 import type { Command } from "commander";
 import pc from "picocolors";
 import { ABSENT, formatCost, formatDuration, formatTokenCount } from "../format.js";
@@ -55,7 +55,7 @@ function printSummary(store: SessionStore, id: string): void {
   ];
   // Newlines stay outside pc.dim so the reset code lands before them.
   process.stderr.write(`\n${pc.dim(`● recorded ${shortId(id)} · ${parts.join(" · ")}`)}\n`);
-  process.stderr.write(`${pc.dim("  replay: agent-blackbox ui")}\n`);
+  process.stderr.write(`${pc.dim("  replay: agentrec ui")}\n`);
 }
 
 async function record(command: string[], injectHooks: boolean): Promise<void> {
@@ -103,7 +103,7 @@ async function record(command: string[], injectHooks: boolean): Promise<void> {
       ? [...command, ...hookSettingsArgs(process.execPath, cliEntryPath())]
       : command;
 
-  process.stderr.write(`${pc.dim(`● agent-blackbox recording ${shortId(meta.id)}`)}\n`);
+  process.stderr.write(`${pc.dim(`● agentrec recording ${shortId(meta.id)}`)}\n`);
 
   try {
     const exitCode = await runPtySession({
@@ -112,8 +112,8 @@ async function record(command: string[], injectHooks: boolean): Promise<void> {
       cwd,
       env: {
         ...process.env,
-        AGENT_BLACKBOX_INGEST_URL: ingest.url,
-        AGENT_BLACKBOX_INGEST_TOKEN: ingest.token,
+        AGENTREC_INGEST_URL: ingest.url,
+        AGENTREC_INGEST_TOKEN: ingest.token,
       },
       writer,
     });

@@ -1,7 +1,7 @@
 {
-  "name": "@agent-blackbox/dashboard",
+  "name": "@agentrec/dashboard",
   "version": "0.1.0",
-  "description": "Local replay dashboard for Agent Black Box sessions",
+  "description": "Local replay dashboard for agentrec sessions",
   "license": "MIT",
   "type": "module",
   "exports": {
@@ -21,7 +21,7 @@
     "test": "vitest run --passWithNoTests"
   },
   "devDependencies": {
-    "@agent-blackbox/core": "workspace:*",
+    "@agentrec/core": "workspace:*",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^6.0.5",

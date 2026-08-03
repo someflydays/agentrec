@@ -13,7 +13,7 @@ reach someone.
 Helpful things to include, to whatever extent you have them:
 
 - What an attacker can achieve, and what access they need to start.
-- Affected version — `agent-blackbox --version` — plus OS and Node version.
+- Affected version — `agentrec --version` — plus OS and Node version.
 - Reproduction steps or a proof of concept. If a session recording demonstrates it, **review it for
   your own secrets first**; a redacted description is better than an unreviewed recording.
 - Any suggested fix or mitigation you have in mind.
@@ -38,7 +38,7 @@ ship a fix before disclosing publicly; 90 days is a good default, and we will us
 
 ## Supported versions
 
-The project is pre-1.0. Only the latest published version of `@agent-blackbox/cli` receives security
+The project is pre-1.0. Only the latest published version of `agentrec` receives security
 fixes. Fixes ship in a new patch or minor release rather than being backported.
 
 ## In scope
@@ -49,8 +49,8 @@ Issues in this repository's code, particularly anything that breaks a stated gua
 - Terminal **input** or keystrokes appearing in a recording.
 - The recorder reading or writing the user's Claude Code settings files, or leaving injected hook
   configuration behind after the process exits.
-- Recording data written outside the session store root (`~/.agent-blackbox` or
-  `AGENT_BLACKBOX_HOME`).
+- Recording data written outside the session store root (`~/.agentrec` or
+  `AGENTREC_HOME`).
 - Path traversal or arbitrary file write when importing a crafted `.agentlog`.
 - Code execution, command injection, or privilege escalation triggered by recorded content,
   a crafted `.agentlog`, or hook payloads.

@@ -3,7 +3,7 @@ import {
   type SessionDetailResponse,
   type SessionEventsResponse,
   type SessionListResponse,
-} from "@agent-blackbox/core/browser";
+} from "@agentrec/core/browser";
 
 export function fetchSessions(): Promise<SessionListResponse> {
   return getJson<SessionListResponse>(API_ROUTES.sessions);
