@@ -210,4 +210,17 @@ describe("exportSession and importFile", () => {
     expect(target.readEvents(id)).toEqual([]);
     expect(target.has(id)).toBe(true);
   });
+
+  it("refuses to import a bundle whose id could escape the store directory", () => {
+    for (const id of ["../../../tmp/x", "a/b", "..", ".", "", "a".repeat(65), "-leading"]) {
+      const malicious: AgentlogBundle = {
+        format: "agentlog",
+        version: AGENTLOG_VERSION,
+        meta: sampleMeta({ id }),
+        events: [],
+        cast: null,
+      };
+      expect(() => importBundle(target, malicious)).toThrowError(/unsafe session id/);
+    }
+  });
 });

@@ -54,6 +54,10 @@ export interface ImportOptions {
   overwrite?: boolean;
 }
 
+// Bundles are untrusted input: the id becomes a directory name, so anything
+// that could traverse (separators, dots) or surprise a filesystem is refused.
+const SAFE_SESSION_ID = /^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/;
+
 /** Import a bundle into the store under its original session id. */
 export function importBundle(
   store: SessionStore,
@@ -61,6 +65,9 @@ export function importBundle(
   options: ImportOptions = {},
 ): string {
   const id = bundle.meta.id;
+  if (typeof id !== "string" || !SAFE_SESSION_ID.test(id)) {
+    throw new Error(`refusing to import bundle with unsafe session id ${JSON.stringify(id)}`);
+  }
   if (store.has(id)) {
     if (!options.overwrite) {
       throw new Error(`session ${id} already exists (pass overwrite to replace it)`);
