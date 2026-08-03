@@ -12,7 +12,8 @@ const program = new Command();
 program
   .name("agent-blackbox")
   .description("Flight recorder for Claude Code sessions: record, replay, share")
-  .version(cliVersion());
+  .version(cliVersion())
+  .enablePositionalOptions();
 
 registerRecordCommand(program);
 registerLsCommand(program);
