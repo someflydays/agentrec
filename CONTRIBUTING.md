@@ -4,7 +4,7 @@ Thanks for looking. Bug reports, format feedback, and pull requests are all welc
 
 ## Prerequisites
 
-- **Node >= 20.19.** The repo pins `22` in `.node-version`; CI runs 20 and 22.
+- **Node >= 22.13.** The repo pins `22` in `.node-version`; CI runs 22 and 24.
 - **pnpm.** The version is pinned by `packageManager` in the root `package.json`. Easiest path:
 
   ```bash

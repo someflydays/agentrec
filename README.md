@@ -7,7 +7,7 @@
 [![CI](https://github.com/someflydays/agentrec/actions/workflows/ci.yml/badge.svg)](https://github.com/someflydays/agentrec/actions/workflows/ci.yml)
 [![npm](https://img.shields.io/npm/v/agentrec.svg?color=cb3837)](https://www.npmjs.com/package/agentrec)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Node](https://img.shields.io/badge/node-%E2%89%A520.19-3fb950.svg)](package.json)
+[![Node](https://img.shields.io/badge/node-%E2%89%A522.13-3fb950.svg)](package.json)
 
 <img src="assets/demo.svg" alt="A terminal recording a Claude Code session, then replaying it on a scrubbable timeline" width="880">
 
@@ -26,7 +26,7 @@ someone else can watch what actually happened.
 ## Quick start
 
 ```bash
-npm install -g agentrec   # 1. install (Node >= 20.19)
+npm install -g agentrec   # 1. install (Node >= 22.13)
 agentrec claude                # 2. record — claude behaves exactly as it always does
 agentrec ui                    # 3. replay in a local dashboard
 ```
