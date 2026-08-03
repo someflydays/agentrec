@@ -6,7 +6,7 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": ["**", "!**/dist", "!**/coverage", "!fixtures/sessions/**"]
+    "includes": ["**", "!**/dist", "!**/coverage", "!fixtures/sessions"]
   },
   "formatter": {
     "enabled": true,
@@ -17,7 +17,7 @@
   "linter": {
     "enabled": true,
     "rules": {
-      "recommended": true,
+      "preset": "recommended",
       "suspicious": {
         "noConsole": "off"
       }
