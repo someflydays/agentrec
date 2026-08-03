@@ -1,0 +1,63 @@
+name: Feature request
+description: Suggest a capability, a format change, or a workflow improvement.
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Check the roadmap in the README first — some of the obvious ideas are already planned,
+        and a comment on an existing issue is more useful than a duplicate.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What are you trying to do that is currently awkward or impossible?
+      placeholder: |
+        I want to find the session where a specific function was introduced, but I have to
+        open sessions one at a time to look.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What you would like to happen
+      description: Be concrete. A command line, an API shape, or a UI behavior.
+      placeholder: |
+        `agent-blackbox grep <pattern>` searching prompts, assistant text, and tool inputs
+        across all sessions, printing session id + timestamp per hit.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you considered
+      description: Including how you work around it today.
+    validations:
+      required: false
+
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Which part of the system would this touch?
+      options:
+        - CLI / recorder
+        - Dashboard / replay UI
+        - Session format or event schema
+        - Export / sharing
+        - Cost and token accounting
+        - Not sure
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: format-impact
+    attributes:
+      label: Compatibility
+      options:
+        - label: This would require a change to the recorded session format
+          required: false
+        - label: I would be willing to work on this
+          required: false

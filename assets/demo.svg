@@ -1,0 +1,140 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 460" width="880" height="460" role="img" aria-labelledby="abbTitle abbDesc">
+  <title id="abbTitle">Agent Black Box</title>
+  <desc id="abbDesc">A terminal running "agent-blackbox claude" records a Claude Code session: a prompt, a Bash tool call, a file edit, and a completed turn. Then "agent-blackbox ui" replays it on a scrubbable timeline.</desc>
+
+  <style>
+    .m { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 15px; }
+    .s { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11.5px; }
+    .t { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; }
+  </style>
+
+  <defs>
+  <clipPath id="clipA">
+    <rect x="44" y="88" width="207" height="24">
+      <animate attributeName="width" dur="12s" repeatCount="indefinite" calcMode="discrete" keyTimes="0;0;0.00471;0.00942;0.01413;0.01884;0.02355;0.02826;0.03297;0.03768;0.04239;0.0471;0.05181;0.05652;0.06123;0.06594;0.07065;0.07536;0.08007;0.08478;0.08949;0.0942;0.09891;0.10362;0.10833;0.9875;1" values="0;0;9;18;27;36;45;54;63;72;81;90;99;108;117;126;135;144;153;162;171;180;189;198;207;0;0"/>
+    </rect>
+  </clipPath>
+  <clipPath id="clipB">
+    <rect x="44" y="274" width="171" height="24">
+      <animate attributeName="width" dur="12s" repeatCount="indefinite" calcMode="discrete" keyTimes="0;0.525;0.52961;0.53421;0.53882;0.54342;0.54803;0.55263;0.55724;0.56184;0.56645;0.57105;0.57566;0.58026;0.58487;0.58947;0.59408;0.59868;0.60329;0.60789;0.6125;0.9875;1" values="0;0;9;18;27;36;45;54;63;72;81;90;99;108;117;126;135;144;153;162;171;0;0"/>
+    </rect>
+  </clipPath>
+  </defs>
+
+  <!-- page -->
+  <rect x="0" y="0" width="880" height="460" fill="#010409"/>
+
+  <!-- window -->
+  <rect x="16" y="16" width="848" height="428" rx="14" fill="#0d1117" stroke="#262c36"/>
+  <path d="M16 56 V30 A14 14 0 0 1 30 16 H850 A14 14 0 0 1 864 30 V56 Z" fill="#161b22"/>
+  <line x1="16" y1="56" x2="864" y2="56" stroke="#262c36"/>
+  <circle cx="40" cy="36" r="5.5" fill="#ff5f57"/>
+  <circle cx="62" cy="36" r="5.5" fill="#febc2e"/>
+  <circle cx="84" cy="36" r="5.5" fill="#28c840"/>
+  <text x="440" y="40" fill="#576069" class="s" text-anchor="middle">~/dev/poller — agent-blackbox</text>
+
+  <!-- status pill: recording during beat 1, replaying during beat 2 -->
+  <g opacity="0">
+    <circle cx="736" cy="36" r="3.6" fill="#d29922">
+      <animate attributeName="opacity" dur="1.6s" repeatCount="indefinite" values="1;0.25;1" keyTimes="0;0.5;1"/>
+    </circle>
+    <text x="828" y="40" fill="#7d8590" class="s" text-anchor="end">recording</text>
+    <animate attributeName="opacity" dur="12s" repeatCount="indefinite" keyTimes="0;0.0625;0.09167;0.64167;0.65833;1" values="0;0;1;1;0;0"/>
+  </g>
+  <g>
+    <circle cx="736" cy="36" r="3.6" fill="#3fb950"/>
+    <text x="828" y="40" fill="#7d8590" class="s" text-anchor="end">replaying</text>
+    <animate attributeName="opacity" dur="12s" repeatCount="indefinite" keyTimes="0;0.65833;0.68333;0.96667;0.9875;1" values="0;0;1;1;0;0"/>
+  </g>
+
+  <!-- beat 1: record -->
+  <g clip-path="url(#clipA)">
+    <text x="44" y="104" fill="#e6edf3" class="m"><tspan fill="#3fb950">$</tspan><tspan fill="#e6edf3" dx="9">agent-blackbox</tspan><tspan fill="#e6edf3" dx="9">claude</tspan></text>
+  </g>
+  <rect x="44" y="91" width="8" height="18" fill="#3fb950" opacity="0"><animate attributeName="x" dur="12s" repeatCount="indefinite" calcMode="discrete" keyTimes="0;0;0.00471;0.00942;0.01413;0.01884;0.02355;0.02826;0.03297;0.03768;0.04239;0.0471;0.05181;0.05652;0.06123;0.06594;0.07065;0.07536;0.08007;0.08478;0.08949;0.0942;0.09891;0.10362;0.10833;0.9875;1" values="44;44;53;62;71;80;89;98;107;116;125;134;143;152;161;170;179;188;197;206;215;224;233;242;251;44;44"/><animate attributeName="opacity" dur="12s" repeatCount="indefinite" calcMode="discrete" keyTimes="0;0;0.12333;0.13833;0.15333;1" values="0;1;0;1;0;0"/></rect>
+
+  <g><animate attributeName="opacity" dur="12s" repeatCount="indefinite" keyTimes="0;0.16667;0.19167;0.96667;0.9875;1" values="0;0;1;1;0;0"/>
+    <g><animateTransform attributeName="transform" type="translate" dur="12s" repeatCount="indefinite" keyTimes="0;0.16667;0.19167;0.96667;0.9875;1" values="0 7;0 7;0 0;0 0;0 7;0 7"/>
+      <circle cx="48" cy="141" r="4" fill="#3fb950"/>
+      <text x="68" y="146" fill="#7d8590" class="m">prompt</text>
+      <text x="140" y="146" fill="#e6edf3" class="m">&#8220;add a watchdog timer to the poller&#8221;</text>
+    </g>
+  </g>
+
+  <g><animate attributeName="opacity" dur="12s" repeatCount="indefinite" keyTimes="0;0.25417;0.27917;0.96667;0.9875;1" values="0;0;1;1;0;0"/>
+    <g><animateTransform attributeName="transform" type="translate" dur="12s" repeatCount="indefinite" keyTimes="0;0.25417;0.27917;0.96667;0.9875;1" values="0 7;0 7;0 0;0 0;0 7;0 7"/>
+      <path d="M45 167.5 L53 173 L45 178.5 Z" fill="#576069"/>
+      <text x="68" y="178" fill="#e6edf3" class="m">Bash</text>
+      <text x="122" y="178" fill="#7d8590" class="m">pnpm test</text>
+      <path d="M770 174 l3.4 3.6 L780 168.6" fill="none" stroke="#3fb950" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <text x="828" y="178" fill="#7d8590" class="m" text-anchor="end">2.1s</text>
+    </g>
+  </g>
+
+  <g><animate attributeName="opacity" dur="12s" repeatCount="indefinite" keyTimes="0;0.34167;0.36667;0.96667;0.9875;1" values="0;0;1;1;0;0"/>
+    <g><animateTransform attributeName="transform" type="translate" dur="12s" repeatCount="indefinite" keyTimes="0;0.34167;0.36667;0.96667;0.9875;1" values="0 7;0 7;0 0;0 0;0 7;0 7"/>
+      <path d="M45 199.5 L53 205 L45 210.5 Z" fill="#576069"/>
+      <text x="68" y="210" fill="#e6edf3" class="m">Edit</text>
+      <text x="122" y="210" fill="#7d8590" class="m">src/watchdog.ts</text>
+      <text x="801" y="210" fill="#3fb950" class="m" text-anchor="end">+6</text>
+      <text x="828" y="210" fill="#7d8590" class="m" text-anchor="end">&#8722;2</text>
+    </g>
+  </g>
+
+  <g><animate attributeName="opacity" dur="12s" repeatCount="indefinite" keyTimes="0;0.42917;0.45417;0.96667;0.9875;1" values="0;0;1;1;0;0"/>
+    <g><animateTransform attributeName="transform" type="translate" dur="12s" repeatCount="indefinite" keyTimes="0;0.42917;0.45417;0.96667;0.9875;1" values="0 7;0 7;0 0;0 0;0 7;0 7"/>
+      <path d="M45 238 l3.4 3.6 L55 232.6" fill="none" stroke="#3fb950" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <text x="68" y="242" fill="#7d8590" class="m">turn complete</text>
+      <text x="828" y="242" fill="#576069" class="m" text-anchor="end">4,182 tok &#183; $0.06</text>
+    </g>
+  </g>
+
+  <!-- beat 2: replay -->
+  <g clip-path="url(#clipB)">
+    <text x="44" y="290" fill="#e6edf3" class="m"><tspan fill="#3fb950">$</tspan><tspan fill="#e6edf3" dx="9">agent-blackbox</tspan><tspan fill="#e6edf3" dx="9">ui</tspan></text>
+  </g>
+  <rect x="44" y="277" width="8" height="18" fill="#3fb950" opacity="0"><animate attributeName="x" dur="12s" repeatCount="indefinite" calcMode="discrete" keyTimes="0;0.525;0.52961;0.53421;0.53882;0.54342;0.54803;0.55263;0.55724;0.56184;0.56645;0.57105;0.57566;0.58026;0.58487;0.58947;0.59408;0.59868;0.60329;0.60789;0.6125;0.9875;1" values="44;44;53;62;71;80;89;98;107;116;125;134;143;152;161;170;179;188;197;206;215;44;44"/><animate attributeName="opacity" dur="12s" repeatCount="indefinite" calcMode="discrete" keyTimes="0;0.525;0.6275;0.6425;0.6575;1" values="0;1;0;1;0;0"/></rect>
+
+  <g><animate attributeName="opacity" dur="12s" repeatCount="indefinite" keyTimes="0;0.62917;0.65417;0.96667;0.9875;1" values="0;0;1;1;0;0"/>
+    <text x="46" y="322" fill="#3fb950" class="m">&#8594;</text>
+    <text x="68" y="322" fill="#7d8590" class="m">serving on 127.0.0.1 &#183; local only</text>
+  </g>
+
+  <!-- replay meter -->
+  <g><animate attributeName="opacity" dur="12s" repeatCount="indefinite" keyTimes="0;0.65833;0.69167;0.96667;0.9875;1" values="0;0;1;1;0;0"/>
+    <path d="M46 350 L56 355.5 L46 361 Z" fill="#3fb950"/>
+    <text x="70" y="358" fill="#7d8590" class="t">session replay</text>
+    <text x="828" y="358" fill="#576069" class="t" text-anchor="end">1.5&#215; &#183; scrub</text>
+
+    <g>
+      <rect x="105.2" y="371" width="3" height="10" rx="1.5" fill="#30363d"/>
+      <rect x="215" y="371" width="3" height="10" rx="1.5" fill="#30363d"/>
+      <rect x="316.9" y="371" width="3" height="10" rx="1.5" fill="#30363d"/>
+      <rect x="450.2" y="371" width="3" height="10" rx="1.5" fill="#30363d"/>
+      <rect x="575.6" y="371" width="3" height="10" rx="1.5" fill="#30363d"/>
+      <rect x="716.7" y="371" width="3" height="10" rx="1.5" fill="#30363d"/>
+    </g>
+    <g>
+      <rect x="105.2" y="371" width="3" height="10" rx="1.5" fill="#3fb950" opacity="1"><animate attributeName="opacity" dur="12s" repeatCount="indefinite" calcMode="discrete" keyTimes="0;0.71167;0.96667;1" values="0;1;0;0"/></rect>
+      <rect x="215" y="371" width="3" height="10" rx="1.5" fill="#3fb950" opacity="1"><animate attributeName="opacity" dur="12s" repeatCount="indefinite" calcMode="discrete" keyTimes="0;0.74667;0.96667;1" values="0;1;0;0"/></rect>
+      <rect x="316.9" y="371" width="3" height="10" rx="1.5" fill="#3fb950" opacity="1"><animate attributeName="opacity" dur="12s" repeatCount="indefinite" calcMode="discrete" keyTimes="0;0.77917;0.96667;1" values="0;1;0;0"/></rect>
+      <rect x="450.2" y="371" width="3" height="10" rx="1.5" fill="#3fb950" opacity="1"><animate attributeName="opacity" dur="12s" repeatCount="indefinite" calcMode="discrete" keyTimes="0;0.82167;0.96667;1" values="0;1;0;0"/></rect>
+      <rect x="575.6" y="371" width="3" height="10" rx="1.5" fill="#3fb950" opacity="0"><animate attributeName="opacity" dur="12s" repeatCount="indefinite" calcMode="discrete" keyTimes="0;0.86167;0.96667;1" values="0;1;0;0"/></rect>
+      <rect x="716.7" y="371" width="3" height="10" rx="1.5" fill="#3fb950" opacity="0"><animate attributeName="opacity" dur="12s" repeatCount="indefinite" calcMode="discrete" keyTimes="0;0.90667;0.96667;1" values="0;1;0;0"/></rect>
+    </g>
+
+    <rect x="44" y="384" width="784" height="8" rx="4" fill="#21262d"/>
+    <rect x="44" y="384" width="486" height="8" rx="4" fill="#3fb950" opacity="0.85">
+      <animate attributeName="width" dur="12s" repeatCount="indefinite" keyTimes="0;0.69167;0.94167;0.9875;1" values="0;0;784;784;0"/>
+    </rect>
+
+    <g transform="translate(486 0)">
+      <line x1="44" y1="367" x2="44" y2="401" stroke="#3fb950" stroke-width="2" stroke-linecap="round"/>
+      <circle cx="44" cy="388" r="4.5" fill="#3fb950"/>
+      <animateTransform attributeName="transform" type="translate" dur="12s" repeatCount="indefinite" keyTimes="0;0.69167;0.94167;0.9875;1" values="0 0;0 0;784 0;784 0;0 0"/>
+    </g>
+
+    <text x="44" y="414" fill="#576069" class="s">00:00</text>
+    <text x="828" y="414" fill="#576069" class="s" text-anchor="end">12:07</text>
+  </g>
+</svg>

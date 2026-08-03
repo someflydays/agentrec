@@ -1,0 +1,92 @@
+name: Bug report
+description: Something recorded, replayed, or exported incorrectly.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before filing, please check whether anything you paste here contains secrets or
+        proprietary code. Recordings capture whatever was on screen — see
+        [docs/security.md](https://github.com/PLACEHOLDER_GH_OWNER/agent-blackbox/blob/main/docs/security.md).
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: The actual behavior, including any error output.
+      placeholder: |
+        `agent-blackbox ui` shows the timeline but the terminal player stays blank.
+        Console error: ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected instead
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Numbered steps, starting from a clean state if you can.
+      placeholder: |
+        1. agent-blackbox claude
+        2. Ask it to edit a file, then exit
+        3. agent-blackbox ui
+        4. Open the session — terminal pane is empty
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Output of `agent-blackbox --version`.
+      placeholder: "0.1.0"
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: OS and terminal
+      description: Operating system, version, and which terminal emulator you were using.
+      placeholder: "macOS 15.3, Ghostty 1.1"
+    validations:
+      required: true
+
+  - type: input
+    id: node
+    attributes:
+      label: Node version
+      description: Output of `node --version`.
+      placeholder: "v22.14.0"
+    validations:
+      required: false
+
+  - type: dropdown
+    id: agentlog
+    attributes:
+      label: Can you share an `.agentlog` of the affected session?
+      description: >
+        Enormously helpful, but entirely optional — a recording contains your prompts, tool
+        output, and file diffs. Only offer one if you have reviewed it. Do not attach it yet;
+        a maintainer will ask.
+      options:
+        - "Yes, I have reviewed it and can attach it"
+        - "Yes, but only privately"
+        - "No"
+        - "Not sure"
+    validations:
+      required: true
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else
+      description: Related issues, a hypothesis, or the part of the code you suspect.
+    validations:
+      required: false
