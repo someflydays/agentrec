@@ -2,6 +2,20 @@
   "name": "@agentrec/dashboard",
   "version": "0.3.0",
   "description": "Local replay dashboard for agentrec sessions",
+  "keywords": [
+    "agentrec",
+    "dashboard",
+    "replay",
+    "xterm",
+    "claude-code"
+  ],
+  "homepage": "https://github.com/someflydays/agentrec#readme",
+  "bugs": "https://github.com/someflydays/agentrec/issues",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/someflydays/agentrec.git",
+    "directory": "packages/dashboard"
+  },
   "license": "MIT",
   "type": "module",
   "exports": {

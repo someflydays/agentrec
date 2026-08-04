@@ -2,6 +2,20 @@
   "name": "agentrec",
   "version": "0.3.0",
   "description": "Flight recorder for Claude Code sessions: record, replay, and share exactly what your coding agent did",
+  "keywords": [
+    "claude-code",
+    "session-recording",
+    "replay",
+    "asciicast",
+    "cli"
+  ],
+  "homepage": "https://github.com/someflydays/agentrec#readme",
+  "bugs": "https://github.com/someflydays/agentrec/issues",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/someflydays/agentrec.git",
+    "directory": "packages/cli"
+  },
   "license": "MIT",
   "type": "module",
   "bin": {

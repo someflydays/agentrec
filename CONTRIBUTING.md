@@ -165,3 +165,29 @@ start.
 ## Reporting security issues
 
 Do not open a public issue. See [SECURITY.md](SECURITY.md).
+
+## Releasing
+
+A release is a tag push; [`.github/workflows/release.yml`](.github/workflows/release.yml) does the
+rest.
+
+1. Bump the version in `packages/core`, `packages/cli` and `packages/dashboard`. The three publish
+   as a set, and the workflow fails if they disagree with each other or with the tag.
+2. Commit the bump and tag it: `git tag v0.4.0 && git push origin main --follow-tags`.
+3. The `verify` job runs `pnpm lint`, `pnpm -r build`, `pnpm -r typecheck` and `pnpm -r test`,
+   checks the tag against the package versions, then packs all three tarballs and installs them
+   into a clean global prefix — no workspace, no `node_modules` — to confirm `agentrec --version`
+   and `agentrec ls` run there.
+4. The `publish` job then runs `pnpm publish -r --access public --provenance`. Recursive publishing
+   is topologically ordered, so `@agentrec/core` and `@agentrec/dashboard` land before the CLI that
+   depends on them, and pnpm rewrites their `workspace:*` ranges to the versions it just published.
+
+Two things have to exist in the repo settings for the publish job to run:
+
+- An **`npm` environment**. Add required reviewers there to hold a release for approval.
+- An **`NPM_TOKEN` secret** on that environment: an npm automation token with publish rights on
+  `agentrec` and the `@agentrec` scope. Provenance needs nothing extra beyond the `id-token: write`
+  permission the workflow already asks for.
+
+Nothing is published from a laptop. `pnpm -r publish --dry-run --no-git-checks` is the local
+rehearsal: it packs each package and reports what it would publish.

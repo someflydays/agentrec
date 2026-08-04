@@ -170,6 +170,39 @@ describe("redactText", () => {
     );
   });
 
+  it("keeps a key name whose keyword is not the last segment", () => {
+    const { text, counts } = redactText("AWS_SECRET_ACCESS_KEY=abc123XYZdefGHI456jklMNO789pqr");
+    expect(text).toBe("AWS_SECRET_ACCESS_KEY=[REDACTED:secret-assignment]");
+    expect(counts).toEqual({ "secret-assignment": 1 });
+
+    expect(redactText("MY_SERVICE_SECRET_VALUE=aB3dEf6hIj9kLm2nOp5qRs8tUv1wXy4z").text).toBe(
+      "MY_SERVICE_SECRET_VALUE=[REDACTED:secret-assignment]",
+    );
+    expect(redactText("DB_PASSWORD_PRIMARY: hunter2swordfish9").text).toBe(
+      "DB_PASSWORD_PRIMARY: [REDACTED:secret-assignment]",
+    );
+  });
+
+  it("keeps the key name of an assignment buried in a command line", () => {
+    const line =
+      "$ TOKEN=aB3dEf6hIj9kLm2nOp5qRs8tUv1wXy4z pnpm --filter agentrec exec vitest run --reporter dot";
+    expect(redactText(line).text).toBe(
+      "$ TOKEN=[REDACTED:secret-assignment] pnpm --filter agentrec exec vitest run --reporter dot",
+    );
+  });
+
+  it("keeps the key name when only the entropy pass recognises the value", () => {
+    const { text, counts } = redactText("MY_APP_CRYPTO_SEED=aB3dEf6hIj9kLm2nOp5qRs8tUv1wXy4z");
+    expect(text).toBe("MY_APP_CRYPTO_SEED=[REDACTED:high-entropy]");
+    expect(counts).toEqual({ [HIGH_ENTROPY_NAME]: 1 });
+  });
+
+  it("still replaces a high-entropy token whose trailing = is base64 padding", () => {
+    expect(redactText("kR7vQ2xN9mB4tW8pZ1cL6yH3jF5dS0gA==").text).toBe(
+      `[REDACTED:${HIGH_ENTROPY_NAME}]`,
+    );
+  });
+
   it("keeps the aws key name and the Authorization scheme readable", () => {
     expect(redactText("AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY").text).toBe(
       "AWS_SECRET_ACCESS_KEY=[REDACTED:aws-secret-access-key]",
@@ -222,6 +255,8 @@ describe("redactText", () => {
       "GITHUB_TOKEN=aB3dEf6hIj9kLm2nOp5qRs8tUv1wXy4z",
       "Authorization: Bearer 9aKd8Lm2Nq4Pr6Ts8Vw0Xy2Zb4Cd",
       "AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+      "AWS_SECRET_ACCESS_KEY=abc123XYZdefGHI456jklMNO789pqr",
+      "MY_APP_CRYPTO_SEED=aB3dEf6hIj9kLm2nOp5qRs8tUv1wXy4z",
       "npm_aB3dEf6hIj9kLm2nOp5qRs8tUv1wXy4z12",
     ];
     for (const sample of samples) {
@@ -385,6 +420,21 @@ describe("redactBundle", () => {
     expect(cast.header.width).toBe(80);
     expect(cast.header.height).toBe(24);
     expect(summary.channels.cast).toBe(2);
+  });
+
+  it("keeps the key name of an assignment inside a cast line", () => {
+    const line =
+      "$ AWS_SECRET_ACCESS_KEY=abc123XYZdefGHI456jklMNO789pqr aws s3 ls --recursive\\r\\n";
+    const { bundle, summary } = redactBundle({
+      ...sampleBundle(),
+      cast: `{"version":2,"width":80,"height":24}\n[0.100000, "o", "${line}"]\n`,
+    });
+    const cast = parseCast(bundle.cast ?? "");
+
+    expect(cast.events[0]?.data).toBe(
+      "$ AWS_SECRET_ACCESS_KEY=[REDACTED:secret-assignment] aws s3 ls --recursive\r\n",
+    );
+    expect(summary.byPattern["secret-assignment"]).toBe(1);
   });
 
   it("handles a bundle with no cast and one with an empty cast", () => {

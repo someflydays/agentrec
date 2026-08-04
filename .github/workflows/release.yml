@@ -1,0 +1,108 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: verify ${{ github.ref_name }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Must run before setup-node so that `cache: pnpm` can resolve the store.
+      # No version input: the pnpm version comes from packageManager in package.json.
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm -r build
+      - run: pnpm -r typecheck
+      - run: pnpm -r test
+
+      # The three packages publish as a set and must carry the same version, so
+      # the tag is checked against all of them, not only the one that names the CLI.
+      - name: Tag matches the package versions
+        run: |
+          for dir in cli core dashboard; do
+            version="v$(node -p "require('./packages/$dir/package.json').version")"
+            if [ "$version" != "$GITHUB_REF_NAME" ]; then
+              echo "packages/$dir is $version but the tag is $GITHUB_REF_NAME" >&2
+              exit 1
+            fi
+          done
+
+      - name: Pack the tarballs
+        run: |
+          mkdir -p "$RUNNER_TEMP/tarballs"
+          pnpm --filter @agentrec/core pack --pack-destination "$RUNNER_TEMP/tarballs"
+          pnpm --filter @agentrec/dashboard pack --pack-destination "$RUNNER_TEMP/tarballs"
+          pnpm --filter agentrec pack --pack-destination "$RUNNER_TEMP/tarballs"
+
+      # Proves the tarballs work outside the workspace: no pnpm, no node_modules,
+      # no source tree. The three go in one `npm install -g` so that the CLI's
+      # @agentrec/core and @agentrec/dashboard dependencies resolve to their
+      # siblings in the prefix; on a first release they do not exist on the
+      # registry yet, so anything that reaches for it fails here.
+      - name: Install the tarballs into a clean prefix and run the CLI
+        env:
+          AGENTREC_HOME: ${{ runner.temp }}/agentrec-home
+        run: |
+          prefix="$RUNNER_TEMP/npm-prefix"
+          mkdir -p "$prefix" "$AGENTREC_HOME"
+          npm install -g --prefix "$prefix" \
+            "$RUNNER_TEMP"/tarballs/agentrec-core-*.tgz \
+            "$RUNNER_TEMP"/tarballs/agentrec-dashboard-*.tgz \
+            "$RUNNER_TEMP"/tarballs/agentrec-[0-9]*.tgz
+          export PATH="$prefix/bin:$PATH"
+          version="$(agentrec --version)"
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "the installed CLI reports $version, not $GITHUB_REF_NAME" >&2
+            exit 1
+          fi
+          agentrec ls
+
+  publish:
+    name: publish to npm
+    needs: verify
+    runs-on: ubuntu-latest
+    # Gate for the NPM_TOKEN secret; add reviewers here to hold releases for approval.
+    environment: npm
+    permissions:
+      contents: read
+      # Provenance is signed with the workflow's OIDC identity.
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+
+      - run: pnpm install --frozen-lockfile
+
+      # dist/ is the only thing the tarballs ship and it is not committed.
+      - run: pnpm -r build
+
+      # `-r` publishes in topological order, so core and dashboard land before the
+      # CLI that depends on them, and pnpm rewrites their `workspace:*` ranges to
+      # the versions it just published.
+      - name: Publish
+        run: pnpm publish -r --access public --provenance --no-git-checks
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

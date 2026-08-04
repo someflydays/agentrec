@@ -2,6 +2,20 @@
   "name": "@agentrec/core",
   "version": "0.3.0",
   "description": "Session format, event schema, and storage for agentrec",
+  "keywords": [
+    "agentrec",
+    "agentlog",
+    "asciicast",
+    "claude-code",
+    "session-recording"
+  ],
+  "homepage": "https://github.com/someflydays/agentrec#readme",
+  "bugs": "https://github.com/someflydays/agentrec/issues",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/someflydays/agentrec.git",
+    "directory": "packages/core"
+  },
   "license": "MIT",
   "type": "module",
   "exports": {

@@ -95,11 +95,13 @@ export const DEFAULT_PATTERNS: RedactionPattern[] = [
     pattern: /(?<keep>authorization[ \t]*:[ \t]*(?:bearer|basic|token)[ \t]+)[\w.~+/=-]{8,}/gi,
   },
   {
-    // The value must hold a letter and six characters so that a rendered
-    // "tokens: 4231" counter is not mistaken for a credential.
+    // The keyword can sit anywhere in a segmented name (`AWS_SECRET_ACCESS_KEY=`,
+    // `DB_PASSWORD_PRIMARY:`), not only at its end, so the surrounding segments are
+    // part of the kept key name. The value must hold a letter and six characters so
+    // that a rendered "tokens: 4231" counter is not mistaken for a credential.
     name: "secret-assignment",
     pattern:
-      /(?<keep>(?:API_?KEY|SECRET|TOKEN|PASSWORD|PASSWD|CREDENTIAL)S?["']?[ \t]*[=:][ \t]*)(?=\S*[A-Za-z])\S{6,}/gi,
+      /(?<keep>\b(?:[A-Za-z0-9]+[._-])*(?:API_?KEY|SECRET|TOKEN|PASSWORD|PASSWD|CREDENTIAL)S?(?:[._-][A-Za-z0-9]+)*["']?[ \t]*[=:][ \t]*)(?=\S*[A-Za-z])\S{6,}/gi,
   },
 ];
 
@@ -121,6 +123,9 @@ const BASE64_CHARSET = /^[A-Za-z0-9+/=]+$/;
 const HAS_DIGIT = /\d/;
 const HAS_LETTER = /[A-Za-z]/;
 const IDENTIFIER_WORD = /^(?:[A-Za-z]+|\d+)$/;
+/** Left of an `=`: an env var, a config key or a long-form flag. */
+const ASSIGNMENT_NAME = /^-{0,2}[A-Za-z_][A-Za-z0-9_.-]*$/;
+const NOT_PADDING = /[^=]/;
 
 interface Span {
   start: number;
@@ -179,6 +184,21 @@ function looksHighEntropy(token: string, minLength: number, threshold: number): 
   return shannonEntropy(token) > threshold;
 }
 
+/**
+ * `AWS_SECRET_ACCESS_KEY=abc…` arrives at the entropy pass as a single token,
+ * because `_` and `=` are both credential characters. Judging and replacing the
+ * value on its own keeps the key name readable in the export. Base64 padding is
+ * not an assignment: the text after the first `=` has to be more than further `=`.
+ */
+function assignedValue(token: string): { offset: number; value: string } | null {
+  const eq = token.indexOf("=");
+  if (eq <= 0) return null;
+  const value = token.slice(eq + 1);
+  if (!NOT_PADDING.test(value)) return null;
+  if (!ASSIGNMENT_NAME.test(token.slice(0, eq))) return null;
+  return { offset: eq + 1, value };
+}
+
 function overlaps(spans: Span[], start: number, end: number): boolean {
   return spans.some((span) => start < span.end && span.start < end);
 }
@@ -228,13 +248,11 @@ export function redactText(text: string, options: RedactionOptions = {}): Redact
     const minLength = entropy.minLength ?? DEFAULT_ENTROPY_MIN_LENGTH;
     const threshold = entropy.threshold ?? DEFAULT_ENTROPY_THRESHOLD;
     for (const match of text.matchAll(ENTROPY_TOKEN)) {
-      if (!looksHighEntropy(match[0], minLength, threshold)) continue;
-      claim(
-        match.index,
-        match.index + match[0].length,
-        HIGH_ENTROPY_NAME,
-        `[REDACTED:${HIGH_ENTROPY_NAME}]`,
-      );
+      const assigned = assignedValue(match[0]);
+      const candidate = assigned?.value ?? match[0];
+      const start = match.index + (assigned?.offset ?? 0);
+      if (!looksHighEntropy(candidate, minLength, threshold)) continue;
+      claim(start, start + candidate.length, HIGH_ENTROPY_NAME, `[REDACTED:${HIGH_ENTROPY_NAME}]`);
     }
   }
 
