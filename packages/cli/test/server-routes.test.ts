@@ -187,7 +187,7 @@ describe("GET /api/sessions/:id/fork-points", () => {
     expect(body).toEqual({ points: [], available: false, reason: expect.any(String) });
   });
 
-  it("lists prompts, replies and tool calls with one-line previews", async () => {
+  it("lists only the events a fork can cut at precisely, with one-line previews", async () => {
     const id = "01CCCCCCCCCCCCCCCCCCCCCCCC";
     seed(id, {
       prompt: LONG_PROMPT,
@@ -203,14 +203,11 @@ describe("GET /api/sessions/:id/fork-points", () => {
 
     expect(response.status).toBe(200);
     expect(body.available).toBe(true);
-    expect(body.points.map((point) => point.type)).toEqual([
-      "prompt",
-      "tool.start",
-      "assistant.text",
-    ]);
+    // Tool calls are deliberately excluded: they come from hooks, whose clock is
+    // independent of the transcript, so cutting at one would be a guess.
+    expect(body.points.map((point) => point.type)).toEqual(["prompt", "assistant.text"]);
     expect(body.points[0]?.preview).toBe(`${LONG_PROMPT.slice(0, 80)}…`);
-    expect(body.points[1]?.preview).toBe("Bash pnpm test");
-    expect(body.points[2]?.preview).toBe("I added a retry loop");
+    expect(body.points[1]?.preview).toBe("I added a retry loop");
     expect(body.points.every((point) => typeof point.t === "number")).toBe(true);
   });
 });

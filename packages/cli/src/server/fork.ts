@@ -18,24 +18,17 @@ import { hasForkToken } from "./security.js";
 const PREVIEW_CHARS = 80;
 const MAX_BODY_BYTES = 1024 * 1024;
 
-/** What a fork can cut at: what the user asked, what the agent said, what it ran. */
-const FORKABLE: ReadonlySet<SessionEventType> = new Set(["prompt", "assistant.text", "tool.start"]);
-
-/** Ordered by how well the field identifies a call, as core's diff orders it. */
-const TOOL_DETAIL_FIELDS = ["command", "file_path", "notebook_path", "path", "pattern", "url"];
+/**
+ * Only events a fork can cut at *precisely*. A prompt resolves by matching its
+ * text and an assistant turn by the transcript uuid recorded at capture time;
+ * every other event type falls back to a timestamp lookup, and hook events run
+ * on a different clock than transcript lines, so those cuts would be guesses.
+ * Keep this in step with cutIndexForEvent and with the CLI's fork --list.
+ */
+const FORKABLE: ReadonlySet<SessionEventType> = new Set(["prompt", "assistant.text"]);
 
 function oneLine(text: string): string {
   return truncate(text.replace(/\s+/g, " ").trim(), PREVIEW_CHARS);
-}
-
-function toolDetail(input: unknown): string | null {
-  if (typeof input !== "object" || input === null || Array.isArray(input)) return null;
-  const record = input as Record<string, unknown>;
-  for (const field of TOOL_DETAIL_FIELDS) {
-    const value = record[field];
-    if (typeof value === "string" && value.length > 0) return value;
-  }
-  return null;
 }
 
 function previewOf(event: SessionEvent): string {
@@ -43,10 +36,6 @@ function previewOf(event: SessionEvent): string {
     case "prompt":
     case "assistant.text":
       return oneLine(event.data.text);
-    case "tool.start": {
-      const detail = toolDetail(event.data.input);
-      return detail === null ? event.data.name : oneLine(`${event.data.name} ${detail}`);
-    }
     default:
       return event.type;
   }
