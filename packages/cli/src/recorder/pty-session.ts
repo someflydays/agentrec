@@ -28,8 +28,9 @@ export async function runPtySession(options: PtySessionOptions): Promise<number>
   const file = command[0];
   if (file === undefined) throw new Error("no command given to record");
 
-  const cols = process.stdout.columns ?? DEFAULT_COLS;
-  const rows = process.stdout.rows ?? DEFAULT_ROWS;
+  // Under `script` and some CI ptys the reported size is 0, which is not nullish.
+  const cols = process.stdout.columns || DEFAULT_COLS;
+  const rows = process.stdout.rows || DEFAULT_ROWS;
 
   const cast = new CastWriter(writer.castPath, {
     width: cols,
@@ -62,8 +63,8 @@ export async function runPtySession(options: PtySessionOptions): Promise<number>
   };
 
   const onResize = (): void => {
-    const nextCols = process.stdout.columns ?? cols;
-    const nextRows = process.stdout.rows ?? rows;
+    const nextCols = process.stdout.columns || cols;
+    const nextRows = process.stdout.rows || rows;
     try {
       pty.resize(nextCols, nextRows);
     } catch {
