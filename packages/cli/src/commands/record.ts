@@ -1,33 +1,14 @@
-import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { type SessionMeta, SessionStore, summarizeSession } from "@agentrec/core";
+import { SessionStore, summarizeSession } from "@agentrec/core";
 import type { Command } from "commander";
 import pc from "picocolors";
 import { ABSENT, formatCost, formatDuration, formatTokenCount } from "../format.js";
-import { mapHookPayload } from "../recorder/hook-events.js";
-import { commandSupportsHooks, hookSettingsArgs } from "../recorder/hooks-settings.js";
-import { startIngestServer } from "../recorder/ingest-server.js";
-import { runPtySession } from "../recorder/pty-session.js";
-import { TranscriptTailer } from "../recorder/transcript-tailer.js";
-import { cliVersion } from "../version.js";
+import { currentGitBranch, startRecordedSession } from "../recorder/session-runner.js";
 
 const DEFAULT_COMMAND = ["claude"];
 
 function messageOf(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
-}
-
-function currentGitBranch(cwd: string): string | undefined {
-  try {
-    const branch = execFileSync("git", ["rev-parse", "--abbrev-ref", "HEAD"], {
-      cwd,
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "ignore"],
-    }).trim();
-    return branch.length > 0 ? branch : undefined;
-  } catch {
-    return undefined;
-  }
 }
 
 /** The running CLI entry point, which the injected hook command re-invokes. */
@@ -64,72 +45,29 @@ async function record(command: string[], injectHooks: boolean): Promise<void> {
   }
 
   const store = new SessionStore();
-  store.ensure();
   const cwd = process.cwd();
   const branch = currentGitBranch(cwd);
-  const meta: Omit<SessionMeta, "formatVersion"> = {
-    id: store.newSessionId(),
-    agent: "claude-code",
+  const session = await startRecordedSession({
+    store,
     command,
     cwd,
-    startedAt: new Date().toISOString(),
+    mode: "pty",
+    cliEntry: cliEntryPath(),
+    hooks: injectHooks,
     ...(branch !== undefined ? { gitBranch: branch } : {}),
-    recorderVersion: cliVersion(),
-  };
-  const writer = store.createSession(meta);
-
-  let tailer: TranscriptTailer | undefined;
-  const applyHookPayload = (payload: unknown): void => {
-    const mapped = mapHookPayload(payload);
-    if (mapped.agentSessionId !== undefined && writer.sessionMeta.agentSessionId === undefined) {
-      writer.updateMeta({ agentSessionId: mapped.agentSessionId });
-    }
-    if (mapped.transcriptPath !== undefined && tailer === undefined) {
-      tailer = new TranscriptTailer(mapped.transcriptPath, writer);
-      tailer.start();
-    }
-    for (const event of mapped.events) writer.event(event.type, event.data);
-  };
-
-  const ingest = await startIngestServer({
-    onPayload: applyHookPayload,
-    onError: (message) => {
-      writer.event("recorder.error", { source: "ingest", message });
+    onStart: (id) => {
+      process.stderr.write(`${pc.dim(`● agentrec recording ${shortId(id)}`)}\n`);
     },
   });
 
-  const argv =
-    injectHooks && commandSupportsHooks(command)
-      ? [...command, ...hookSettingsArgs(process.execPath, cliEntryPath())]
-      : command;
-
-  process.stderr.write(`${pc.dim(`● agentrec recording ${shortId(meta.id)}`)}\n`);
-
+  let exitCode: number | null;
   try {
-    const exitCode = await runPtySession({
-      command: argv,
-      title: command.join(" "),
-      cwd,
-      env: {
-        ...process.env,
-        AGENTREC_INGEST_URL: ingest.url,
-        AGENTREC_INGEST_TOKEN: ingest.token,
-      },
-      writer,
-    });
-    tailer?.stop();
-    writer.end(exitCode);
-    process.exitCode = exitCode;
-    printSummary(store, meta.id);
+    exitCode = await session.done;
   } catch (error) {
-    const message = messageOf(error);
-    writer.event("recorder.error", { source: "pty", message });
-    writer.end(null);
-    throw new Error(`could not record "${command.join(" ")}": ${message}`);
-  } finally {
-    tailer?.stop();
-    await ingest.close();
+    throw new Error(`could not record "${command.join(" ")}": ${messageOf(error)}`);
   }
+  if (exitCode !== null) process.exitCode = exitCode;
+  printSummary(store, session.id);
 }
 
 export function registerRecordCommand(program: Command): void {

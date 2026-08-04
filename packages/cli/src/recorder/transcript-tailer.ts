@@ -27,9 +27,21 @@ function lineUuid(line: string): string | undefined {
   return asNonEmptyString(asRecord(parsed)?.uuid);
 }
 
+export interface TranscriptTailerOptions {
+  /**
+   * uuids of transcript lines this session did not produce. A resumed
+   * conversation (every fork, and `--resume`/`--continue`) starts from a
+   * transcript that already holds its parent's turns, and tailing replays the
+   * file from the beginning: without this the parent's replies and token spend
+   * would be recorded a second time, against the child.
+   */
+  skipUuids?: ReadonlySet<string>;
+}
+
 export class TranscriptTailer {
   private readonly path: string;
   private readonly writer: SessionWriter;
+  private readonly skipUuids: ReadonlySet<string> | undefined;
   private readonly parser = new TranscriptParser();
   private decoder = new StringDecoder("utf8");
   private timer: NodeJS.Timeout | undefined;
@@ -37,9 +49,10 @@ export class TranscriptTailer {
   private offset = 0;
   private partial = "";
 
-  constructor(path: string, writer: SessionWriter) {
+  constructor(path: string, writer: SessionWriter, options: TranscriptTailerOptions = {}) {
     this.path = path;
     this.writer = writer;
+    this.skipUuids = options.skipUuids;
   }
 
   start(): void {
@@ -90,35 +103,46 @@ export class TranscriptTailer {
     if (text.length === 0) return;
     const lines = (this.partial + text).split("\n");
     this.partial = lines.pop() ?? "";
-    for (const line of lines) {
-      const observations = this.parser.observe(line);
-      // Only lines that carried something worth recording are parsed a second
-      // time for their uuid.
-      const uuid = observations.length > 0 ? lineUuid(line) : undefined;
-      const from = uuid !== undefined ? { transcriptUuid: uuid } : {};
-      for (const observation of observations) {
-        switch (observation.kind) {
-          case "assistant-text":
-            this.writer.event("assistant.text", {
-              text: observation.text,
-              ...(observation.model !== undefined ? { model: observation.model } : {}),
-              ...(observation.requestId !== undefined ? { requestId: observation.requestId } : {}),
-              ...from,
-            });
-            break;
-          case "usage":
-            this.writer.event("usage", {
-              model: observation.model,
-              requestId: observation.requestId,
-              usage: observation.usage,
-              ...from,
-            });
-            break;
-          case "title":
-            this.writer.event("session.title", { title: observation.title });
-            this.writer.updateMeta({ title: observation.title });
-            break;
-        }
+    for (const line of lines) this.consumeLine(line);
+  }
+
+  private consumeLine(line: string): void {
+    // Without a skip set, only lines that carried something worth recording are
+    // parsed a second time for their uuid; with one, every line is.
+    const known = this.skipUuids === undefined ? undefined : lineUuid(line);
+    if (known !== undefined && this.skipUuids?.has(known) === true) {
+      // Still parsed, so the parser's per-request usage dedup keeps matching
+      // the file, but nothing an inherited line says belongs to this session.
+      this.parser.observe(line);
+      return;
+    }
+
+    const observations = this.parser.observe(line);
+    if (observations.length === 0) return;
+    const uuid = known ?? lineUuid(line);
+    const from = uuid !== undefined ? { transcriptUuid: uuid } : {};
+    for (const observation of observations) {
+      switch (observation.kind) {
+        case "assistant-text":
+          this.writer.event("assistant.text", {
+            text: observation.text,
+            ...(observation.model !== undefined ? { model: observation.model } : {}),
+            ...(observation.requestId !== undefined ? { requestId: observation.requestId } : {}),
+            ...from,
+          });
+          break;
+        case "usage":
+          this.writer.event("usage", {
+            model: observation.model,
+            requestId: observation.requestId,
+            usage: observation.usage,
+            ...from,
+          });
+          break;
+        case "title":
+          this.writer.event("session.title", { title: observation.title });
+          this.writer.updateMeta({ title: observation.title });
+          break;
       }
     }
   }

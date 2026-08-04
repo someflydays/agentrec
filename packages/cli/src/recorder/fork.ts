@@ -3,14 +3,8 @@ import { randomUUID } from "node:crypto";
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import type { SessionEvent, SessionMeta, SessionStore } from "@agentrec/core";
-import { cliVersion } from "../version.js";
-import { mapHookPayload } from "./hook-events.js";
-import { commandSupportsHooks, hookSettingsArgs } from "./hooks-settings.js";
-import { startIngestServer } from "./ingest-server.js";
+import type { SessionEvent } from "@agentrec/core";
 import { asNonEmptyString, asRecord } from "./json.js";
-import { runPtySession } from "./pty-session.js";
-import { TranscriptTailer } from "./transcript-tailer.js";
 
 /**
  * Forking rewrites nothing: it reads a Claude Code transcript, writes a
@@ -324,6 +318,19 @@ export function planFork(lines: readonly unknown[], cut: ForkCutPoint): ForkPlan
   };
 }
 
+/**
+ * uuids of every conversation line a plan carries over. The forked session
+ * resumes from these, so its tailer must not record them a second time.
+ */
+export function plannedUuids(lines: readonly TranscriptLine[]): Set<string> {
+  const uuids = new Set<string>();
+  for (const line of lines) {
+    const uuid = asNonEmptyString(line.uuid);
+    if (uuid !== undefined) uuids.add(uuid);
+  }
+  return uuids;
+}
+
 /** Writes <newSessionId>.jsonl; never opens the source, never clobbers a session. */
 export function writeForkedTranscript(
   lines: readonly TranscriptLine[],
@@ -427,104 +434,4 @@ export function forkPoints(events: readonly SessionEvent[]): ForkPoint[] {
     }
   }
   return points;
-}
-
-function currentGitBranch(cwd: string): string | undefined {
-  try {
-    const branch = execFileSync("git", ["rev-parse", "--abbrev-ref", "HEAD"], {
-      cwd,
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "ignore"],
-    }).trim();
-    return branch.length > 0 ? branch : undefined;
-  } catch {
-    return undefined;
-  }
-}
-
-export interface ForkLaunchOptions {
-  /** argv of the resume invocation, e.g. ["claude", "--resume", id, "--fork-session"]. */
-  command: string[];
-  cwd: string;
-  store: SessionStore;
-  forkedFrom: { sessionId: string; seq: number };
-  /** The running CLI entry point, which the injected hook command re-invokes. */
-  cliEntry: string;
-  onStart?: (id: string) => void;
-}
-
-/**
- * Records the forked session exactly as `agentrec record` does, with the
- * lineage stamped into its meta.
- */
-export async function launchForkedSession(options: ForkLaunchOptions): Promise<{
-  id: string;
-  exitCode: number;
-}> {
-  if (!process.stdin.isTTY || !process.stdout.isTTY) {
-    throw new Error("recording the fork requires an interactive terminal");
-  }
-
-  const { command, cwd, store } = options;
-  store.ensure();
-  const branch = currentGitBranch(cwd);
-  const meta: Omit<SessionMeta, "formatVersion"> = {
-    id: store.newSessionId(),
-    agent: "claude-code",
-    command,
-    cwd,
-    startedAt: new Date().toISOString(),
-    ...(branch !== undefined ? { gitBranch: branch } : {}),
-    recorderVersion: cliVersion(),
-    forkedFrom: options.forkedFrom,
-  };
-  const writer = store.createSession(meta);
-
-  let tailer: TranscriptTailer | undefined;
-  const ingest = await startIngestServer({
-    onPayload: (payload) => {
-      const mapped = mapHookPayload(payload);
-      if (mapped.agentSessionId !== undefined && writer.sessionMeta.agentSessionId === undefined) {
-        writer.updateMeta({ agentSessionId: mapped.agentSessionId });
-      }
-      if (mapped.transcriptPath !== undefined && tailer === undefined) {
-        tailer = new TranscriptTailer(mapped.transcriptPath, writer);
-        tailer.start();
-      }
-      for (const event of mapped.events) writer.event(event.type, event.data);
-    },
-    onError: (message) => {
-      writer.event("recorder.error", { source: "ingest", message });
-    },
-  });
-
-  const argv = commandSupportsHooks(command)
-    ? [...command, ...hookSettingsArgs(process.execPath, options.cliEntry)]
-    : command;
-  options.onStart?.(meta.id);
-
-  try {
-    const exitCode = await runPtySession({
-      command: argv,
-      title: command.join(" "),
-      cwd,
-      env: {
-        ...process.env,
-        AGENTREC_INGEST_URL: ingest.url,
-        AGENTREC_INGEST_TOKEN: ingest.token,
-      },
-      writer,
-    });
-    tailer?.stop();
-    writer.end(exitCode);
-    return { id: meta.id, exitCode };
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    writer.event("recorder.error", { source: "pty", message });
-    writer.end(null);
-    throw new Error(`could not record the fork: ${message}`);
-  } finally {
-    tailer?.stop();
-    await ingest.close();
-  }
 }

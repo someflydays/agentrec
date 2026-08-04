@@ -10,13 +10,14 @@ import {
   cutIndexForEvent,
   type ForkPoint,
   forkPoints,
-  launchForkedSession,
   newAgentSessionId,
   planFork,
+  plannedUuids,
   readTranscriptLines,
   resolveTranscriptPath,
   writeForkedTranscript,
 } from "../recorder/fork.js";
+import { currentGitBranch, startRecordedSession } from "../recorder/session-runner.js";
 
 const MAX_PREVIEW_CHARS = 64;
 
@@ -176,18 +177,37 @@ async function fork(session: string, options: ForkOptions): Promise<void> {
   );
   process.stderr.write(`${pc.dim(`  ${WORKING_TREE_NOTE}`)}\n`);
 
-  const forked = await launchForkedSession({
+  if (!process.stdin.isTTY || !process.stdout.isTTY) {
+    throw new Error("recording the fork requires an interactive terminal");
+  }
+  const branch = currentGitBranch(meta.cwd);
+  const recording = await startRecordedSession({
+    store,
     command,
     cwd: meta.cwd,
-    store,
-    forkedFrom: { sessionId: id, seq },
+    mode: "pty",
     cliEntry: process.argv[1] ?? fileURLToPath(import.meta.url),
+    forkedFrom: { sessionId: id, seq },
+    // The replayed conversation is already recorded against the parent.
+    inheritedUuids: plannedUuids(plan.lines),
+    ...(branch !== undefined ? { gitBranch: branch } : {}),
     onStart: (forkId) => {
       process.stderr.write(`${pc.dim(`● agentrec recording ${shortId(forkId)}`)}\n`);
     },
   });
-  process.exitCode = forked.exitCode;
-  process.stderr.write(`\n${pc.dim(`● recorded ${shortId(forked.id)} · replay: agentrec ui`)}\n`);
+
+  let exitCode: number | null;
+  try {
+    exitCode = await recording.done;
+  } catch (error) {
+    throw new Error(
+      `could not record the fork: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+  if (exitCode !== null) process.exitCode = exitCode;
+  process.stderr.write(
+    `\n${pc.dim(`● recorded ${shortId(recording.id)} · replay: agentrec ui`)}\n`,
+  );
 }
 
 export function registerForkCommand(program: Command): void {
