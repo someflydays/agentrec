@@ -498,6 +498,13 @@ button {
   list-style: none;
 }
 
+/* Stands in for the rows the timeline keeps out of the DOM. */
+.timeline-pad {
+  display: block;
+  margin: 0;
+  padding: 0;
+}
+
 .row {
   border-bottom: 1px solid var(--line);
 }

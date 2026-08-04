@@ -1,9 +1,8 @@
 import type { Cast, CastEvent } from "@agentrec/core/browser";
 import { Terminal } from "@xterm/xterm";
 import { type ReactElement, type RefObject, useCallback, useEffect, useRef, useState } from "react";
-import { castDuration, parseResize } from "../lib/cast";
 import { formatSeconds } from "../lib/format";
-import { fitFontSize, MONO_STACK, TERMINAL_THEME } from "../lib/terminal";
+import { CastPlayer, fitFontSize, MONO_STACK, TERMINAL_THEME } from "../lib/terminal";
 import "@xterm/xterm/css/xterm.css";
 
 const SPEEDS = [1, 2, 4, 8] as const;
@@ -30,8 +29,6 @@ interface TerminalPaneProps {
 }
 
 interface Clock {
-  /** Index of the next cast event to write. */
-  index: number;
   /** Virtual time at the last commit, in seconds. */
   virtualT: number;
   /** performance.now() at the last commit. */
@@ -40,14 +37,11 @@ interface Clock {
 
 export function TerminalPane(props: TerminalPaneProps): ReactElement {
   const hostRef = useRef<HTMLDivElement>(null);
-  const termRef = useRef<Terminal | null>(null);
-  const eventsRef = useRef<CastEvent[]>([]);
-  const clockRef = useRef<Clock>({ index: 0, virtualT: 0, wallStart: 0 });
+  const playerRef = useRef<CastPlayer | null>(null);
+  const clockRef = useRef<Clock>({ virtualT: 0, wallStart: 0 });
   const totalRef = useRef(0);
   const reportedRef = useRef(0);
   const followRef = useRef(props.follow);
-  // Set by the mount effect; re-run whenever the recorded grid changes size.
-  const refitRef = useRef<() => void>(() => undefined);
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState<Speed>(1);
   const [elapsed, setElapsed] = useState(0);
@@ -56,40 +50,11 @@ export function TerminalPane(props: TerminalPaneProps): ReactElement {
   followRef.current = props.follow;
 
   const seek = useCallback((seconds: number) => {
-    const term = termRef.current;
-    if (term === null) return;
-    const events = eventsRef.current;
+    const player = playerRef.current;
+    if (player === null) return;
     const target = Math.max(0, Math.min(seconds, totalRef.current));
-
-    let cols = term.cols;
-    let rows = term.rows;
-    let chunk = "";
-    let index = 0;
-    while (index < events.length) {
-      const event = events[index];
-      if (event === undefined || event.t > target) break;
-      index += 1;
-      if (event.code === "o") {
-        chunk += event.data;
-        continue;
-      }
-      if (event.code === "r") {
-        const size = parseResize(event.data);
-        if (size !== null) {
-          cols = size.cols;
-          rows = size.rows;
-        }
-      }
-    }
-
-    term.reset();
-    if (cols !== term.cols || rows !== term.rows) {
-      term.resize(cols, rows);
-      refitRef.current();
-    }
-    if (chunk.length > 0) term.write(chunk);
-
-    clockRef.current = { index, virtualT: target, wallStart: performance.now() };
+    player.to(target);
+    clockRef.current = { virtualT: target, wallStart: performance.now() };
     setElapsed(target);
   }, []);
 
@@ -103,26 +68,16 @@ export function TerminalPane(props: TerminalPaneProps): ReactElement {
   }, [seek]);
 
   const appendLive = useCallback((event: CastEvent) => {
-    eventsRef.current.push(event);
+    const player = playerRef.current;
+    player?.append(event);
     totalRef.current = Math.max(totalRef.current, event.t);
     const following = followRef.current;
 
     if (following) {
-      const term = termRef.current;
       const clock = clockRef.current;
-      clock.index = eventsRef.current.length;
       clock.virtualT = event.t;
       clock.wallStart = performance.now();
-      if (term !== null) {
-        if (event.code === "o") term.write(event.data);
-        else if (event.code === "r") {
-          const size = parseResize(event.data);
-          if (size !== null) {
-            term.resize(size.cols, size.rows);
-            refitRef.current();
-          }
-        }
-      }
+      player?.to(event.t);
     }
 
     // Bursty output would otherwise re-render the player bar per frame.
@@ -159,15 +114,15 @@ export function TerminalPane(props: TerminalPaneProps): ReactElement {
       theme: TERMINAL_THEME,
     });
     term.open(host);
-    termRef.current = term;
-    eventsRef.current = [...cast.events];
-    totalRef.current = castDuration(cast.events);
 
     const applyFit = (): void => {
       const size = fitFontSize(host.clientWidth, host.clientHeight, term.cols, term.rows);
       if (term.options.fontSize !== size) term.options.fontSize = size;
     };
-    refitRef.current = applyFit;
+    const player = new CastPlayer(term, cast, applyFit);
+    playerRef.current = player;
+    totalRef.current = player.duration;
+
     applyFit();
     const observer = new ResizeObserver(applyFit);
     observer.observe(host);
@@ -178,10 +133,9 @@ export function TerminalPane(props: TerminalPaneProps): ReactElement {
 
     return () => {
       observer.disconnect();
-      refitRef.current = () => undefined;
+      player.dispose();
+      playerRef.current = null;
       term.dispose();
-      termRef.current = null;
-      eventsRef.current = [];
     };
   }, [props.cast, seek]);
 
@@ -193,15 +147,15 @@ export function TerminalPane(props: TerminalPaneProps): ReactElement {
     let reported = -1;
 
     const tick = (): void => {
-      const term = termRef.current;
-      if (term === null) return;
+      const player = playerRef.current;
+      if (player === null) return;
       const t = clock.virtualT + ((performance.now() - clock.wallStart) / 1000) * speed;
-      writeThrough(term, eventsRef.current, clock, t, refitRef.current);
+      player.to(Math.min(t, totalRef.current));
       if (Math.abs(t - reported) >= REPORT_INTERVAL) {
         reported = t;
         setElapsed(Math.min(t, totalRef.current));
       }
-      if (clock.index >= eventsRef.current.length && t >= totalRef.current) {
+      if (t >= totalRef.current) {
         setPlaying(false);
         setElapsed(totalRef.current);
         return;
@@ -301,34 +255,3 @@ const PLACEHOLDER: Readonly<Record<CastStatus, string>> = {
   missing: "This session has no terminal recording.",
   error: "The terminal recording could not be read.",
 };
-
-/** Advances the terminal to virtual time `t`, batching output into one write. */
-function writeThrough(
-  term: Terminal,
-  events: CastEvent[],
-  clock: Clock,
-  t: number,
-  refit: () => void,
-): void {
-  let chunk = "";
-  while (clock.index < events.length) {
-    const event = events[clock.index];
-    if (event === undefined || event.t > t) break;
-    clock.index += 1;
-    if (event.code === "o") {
-      chunk += event.data;
-      continue;
-    }
-    if (event.code === "r") {
-      const size = parseResize(event.data);
-      if (size === null) continue;
-      if (chunk.length > 0) {
-        term.write(chunk);
-        chunk = "";
-      }
-      term.resize(size.cols, size.rows);
-      refit();
-    }
-  }
-  if (chunk.length > 0) term.write(chunk);
-}

@@ -1,9 +1,19 @@
-import { type ReactElement, useEffect, useRef, useState } from "react";
+import {
+  type ReactElement,
+  type UIEvent,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useReducer,
+  useRef,
+  useState,
+} from "react";
 import { firstLine, formatDuration, formatOffset, summarizeToolInput } from "../lib/format";
 import {
   FILTER_KINDS,
   FILTER_LABELS,
   type FilterKind,
+  RowPositions,
   type TimelineRow,
   type ToolRow,
 } from "../lib/timeline";
@@ -28,25 +38,123 @@ interface TimelineProps {
   onFork: (key: string) => void;
 }
 
+interface Viewport {
+  top: number;
+  height: number;
+}
+
 export function Timeline(props: TimelineProps): ReactElement {
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => new Set());
   const listRef = useRef<HTMLOListElement>(null);
+  const positionsRef = useRef<RowPositions | null>(null);
+  positionsRef.current ??= new RowPositions();
+  const positions = positionsRef.current;
+  const [viewport, setViewport] = useState<Viewport>({ top: 0, height: 0 });
+  const [, remeasured] = useReducer((tick: number) => tick + 1, 0);
+  /** Row that still owes an exact scroll once it mounts. */
+  const revealRef = useRef<string | null>(null);
+  /** Content height at the last tail pin; -1 while not tailing. */
+  const pinnedRef = useRef(-1);
   const rowCount = props.rows.length;
+  const hasRows = rowCount > 0;
   const selectedKey = props.selectedKey;
   const forkSelected = selectedKey !== null && props.forkable.has(selectedKey);
 
-  useEffect(() => {
+  // Purely derived from the rows about to be rendered, so it belongs with them
+  // rather than in an effect that would run a frame too late.
+  positions.sync(props.rows);
+  const mounted = positions.windowFor(viewport.top, viewport.height);
+
+  const syncViewport = useCallback((list: HTMLOListElement) => {
+    const top = list.scrollTop;
+    const height = list.clientHeight;
+    setViewport((current) =>
+      current.top === top && current.height === height ? current : { top, height },
+    );
+  }, []);
+
+  // Heights are only knowable once a row is on screen, so every commit measures
+  // what is mounted and hands the cache back its real numbers.
+  useLayoutEffect(() => {
     const list = listRef.current;
-    if (!props.tailing || list === null || rowCount === 0) return;
-    list.scrollTop = list.scrollHeight;
-  }, [props.tailing, rowCount]);
+    if (list === null) return;
+    let moved = false;
+    for (const node of list.querySelectorAll<HTMLElement>("[data-row]")) {
+      const key = node.dataset.row;
+      if (key === undefined) continue;
+      if (positions.measure(key, node.getBoundingClientRect().height, expanded.has(key))) {
+        moved = true;
+      }
+    }
+
+    if (props.tailing) {
+      // Rows below the fold are estimates until they mount, so the content keeps
+      // growing under the tail; re-pin whenever it does, and otherwise leave a
+      // deliberate scroll where the reader put it.
+      if (list.scrollHeight !== pinnedRef.current) {
+        pinnedRef.current = list.scrollHeight;
+        const bottom = Math.max(0, list.scrollHeight - list.clientHeight);
+        if (Math.abs(list.scrollTop - bottom) > 0.5) list.scrollTop = bottom;
+      }
+    } else {
+      pinnedRef.current = -1;
+      const reveal = revealRef.current;
+      if (reveal !== null) {
+        const node = list.querySelector<HTMLElement>(`[data-row="${reveal}"]`);
+        if (node !== null) {
+          revealRef.current = null;
+          node.scrollIntoView({ block: "nearest" });
+        }
+      }
+    }
+
+    syncViewport(list);
+    if (moved) remeasured();
+  });
+
+  useLayoutEffect(() => {
+    if (selectedKey === null) return;
+    const list = listRef.current;
+    if (list === null) return;
+    const index = positions.indexOf(selectedKey);
+    if (index < 0) return;
+    const node = list.querySelector<HTMLElement>(`[data-row="${selectedKey}"]`);
+    if (node !== null) {
+      node.scrollIntoView({ block: "nearest" });
+      syncViewport(list);
+      return;
+    }
+    // j/k can land on a row that was never rendered: aim with the cache, then
+    // let the pass after it mounts correct for the estimate.
+    const top = positions.offsetOf(index);
+    const bottom = top + positions.heightOf(index);
+    if (top < list.scrollTop) {
+      list.scrollTop = top;
+    } else if (bottom > list.scrollTop + list.clientHeight) {
+      list.scrollTop = bottom - list.clientHeight;
+    }
+    revealRef.current = selectedKey;
+    syncViewport(list);
+  }, [selectedKey, positions, syncViewport]);
 
   useEffect(() => {
-    if (props.selectedKey === null) return;
     const list = listRef.current;
-    const node = list?.querySelector(`[data-row="${props.selectedKey}"]`);
-    node?.scrollIntoView({ block: "nearest" });
-  }, [props.selectedKey]);
+    if (!hasRows || list === null) return;
+    let width = list.clientWidth;
+    const observer = new ResizeObserver(() => {
+      // Every measured height was taken at the old width.
+      if (list.clientWidth !== width) {
+        width = list.clientWidth;
+        positions.forget();
+      }
+      syncViewport(list);
+      remeasured();
+    });
+    observer.observe(list);
+    return () => {
+      observer.disconnect();
+    };
+  }, [hasRows, positions, syncViewport]);
 
   const toggleExpanded = (key: string): void => {
     setExpanded((current) => {
@@ -100,10 +208,19 @@ export function Timeline(props: TimelineProps): ReactElement {
       {rowCount === 0 ? (
         <p className="pane-placeholder">No events match the current filters.</p>
       ) : (
-        <ol className="timeline" ref={listRef}>
-          {props.rows.map((row) =>
+        <ol
+          className="timeline"
+          ref={listRef}
+          onScroll={(event: UIEvent<HTMLOListElement>) => {
+            syncViewport(event.currentTarget);
+          }}
+        >
+          {mounted.padTop > 0 ? (
+            <li className="timeline-pad" style={{ height: mounted.padTop }} aria-hidden="true" />
+          ) : null}
+          {props.rows.slice(mounted.start, mounted.end).map((row) =>
             row.kind === "turn" ? (
-              <li key={row.key} className="turn-break">
+              <li key={row.key} className="turn-break" data-row={row.key}>
                 <span>turn complete</span>
               </li>
             ) : (
@@ -122,6 +239,9 @@ export function Timeline(props: TimelineProps): ReactElement {
               />
             ),
           )}
+          {mounted.padBottom > 0 ? (
+            <li className="timeline-pad" style={{ height: mounted.padBottom }} aria-hidden="true" />
+          ) : null}
         </ol>
       )}
     </section>
