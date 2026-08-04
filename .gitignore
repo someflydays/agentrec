@@ -5,3 +5,9 @@ coverage/
 .DS_Store
 *.tsbuildinfo
 .agentlog-tmp/
+
+# search index cache (rebuildable from the JSONL sources)
+index.db
+index.db-journal
+index.db-wal
+index.db-shm
