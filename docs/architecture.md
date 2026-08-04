@@ -341,16 +341,19 @@ error the user has to act on. That is only defensible because the JSONL files ar
 truth and reindexing them is cheap; it is what lets the index be gitignored, deleted at will, and
 left out of `.agentlog` bundles entirely.
 
-### Fork points are limited to prompts and assistant turns
+### Fork points are limited to events with an exact transcript anchor
 
-Only two event types are offered as fork points, and the reason is precision. A `prompt` resolves to
-a transcript line by matching its text, and an `assistant.text` resolves by the `transcriptUuid`
-recorded at capture time. Every other event type — tool calls, file changes, notifications — would
-have to fall back to a timestamp lookup, and hook events run on a different clock than transcript
-lines, so those cuts would be guesses. A fork that cuts one line off from where the user pointed is
-worse than one that refuses to offer the point at all, because the resulting session looks correct.
+Three event types are offered as fork points, and the reason is precision. A `prompt` resolves to a
+transcript line by matching its text, an `assistant.text` by the `transcriptUuid` recorded at
+capture time, and a `tool.start` by its `toolUseId`, which is byte-identical to the `tool_use`
+block id in the transcript. A tool-call fork cuts just before the call ran, dropping the call and
+its result so the new session resumes from the state the agent decided to call the tool from.
+Everything else — file changes, notifications — would have to fall back to a timestamp lookup, and
+hook events run on a different clock than transcript lines, so those cuts would be guesses. A fork
+that cuts one line off from where the user pointed is worse than one that refuses to offer the point
+at all, because the resulting session looks correct.
 
-The CLI's `--list` and the server's `/fork-points` therefore return the same two kinds, and the
+The CLI's `--list` and the server's `/fork-points` therefore return the same three kinds, and the
 fork route re-checks that the requested `seq` is one of them before it will run.
 
 ### One portable file for sharing

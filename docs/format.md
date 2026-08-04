@@ -98,10 +98,13 @@ Notes on individual types:
   unvalidated — hence `unknown`. Its shape depends entirely on the tool.
 - **`toolUseId`** correlates a `tool.start`, its `tool.end`, and any `file.change` it caused. It is
   optional because not every source path supplies one; do not assume it is present.
-- **`tool.end.ok`** is the tool's own success signal, not an assertion that the agent's intent
-  succeeded. It is `false` only when the hook payload's `tool_response.success` was exactly `false`.
-- **`tool.end.output`** is the hook's `tool_response` serialized as JSON, cut to 16,384 characters
-  with a trailing `…[truncated]`. It is absent when the payload carried no response.
+- **`tool.end.ok`** records whether the tool succeeded. Claude Code fires `PostToolUse` only on
+  success and a separate `PostToolUseFailure` on failure, so `ok` is `true` for a `PostToolUse` and
+  `false` for a `PostToolUseFailure`. (No built-in tool emits a `tool_response.success` field in
+  2.1.221; a `success: false` from an MCP tool is still honored if one appears.)
+- **`tool.end.output`** on success is the hook's `tool_response` serialized as JSON, cut to 16,384
+  characters with a trailing `…[truncated]`; on failure it is the payload's `error` string, which is
+  already human-readable prose. It is absent when neither was present.
 - **`file.change`** is derived from successful `Edit` and `Write` tool calls only; a failed write
   produces none. `diff` is unified-*shaped* — the hook payload carries the replaced text but not its
   position, so the hunk header is nominal. It is cut to 204,800 characters the same way.

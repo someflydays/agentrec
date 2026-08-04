@@ -114,7 +114,6 @@ Known gaps carried from v0.1.0 reviews, tracked as individual issues:
 | Dashboard | Timeline renders every row (no virtualization); seeking rewrites the whole output prefix |
 | Dashboard | SSE can miss an event written between the initial fetch and stream subscribe (needs `since-seq`) |
 | Server | Rereads full `events.jsonl` per request; session list re-summarizes on every poll |
-| Recorder | `tool_use_id` correlation and `tool_response.success` are conventions, not verified contracts |
 | Recorder | A user-supplied `--settings` in the wrapped command would collide with hook injection |
 | Platform | Windows (ConPTY, signal forwarding) untested and unsupported |
 | Release | No npm publish pipeline yet (provenance, version sync across the workspace) |
