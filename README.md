@@ -185,7 +185,7 @@ prompts, and file diffs. If a command printed an API key, that key is in the cas
 looking at it first. Automatic secret redaction on export is on the roadmap and does not exist yet.
 
 Full threat model, including exactly what is and is not captured:
-[docs/security.md](docs/security.md).
+[docs/privacy.md](docs/privacy.md).
 
 ## How it compares
 

@@ -110,7 +110,7 @@ AGENTREC_HOME=/tmp/abb-scratch node packages/cli/bin/agentrec.js claude
 
 To add a fixture, record a session and export/import it into `fixtures`, or copy a session directory
 in by hand. Keep fixtures small, and **scrub them** — they are committed to a public repo. See
-[docs/security.md](docs/security.md) for what a recording contains.
+[docs/privacy.md](docs/privacy.md) for what a recording contains.
 
 ## Commit style
 
@@ -165,7 +165,3 @@ start.
 ## Reporting security issues
 
 Do not open a public issue. See [SECURITY.md](SECURITY.md).
-
-## Code of conduct
-
-Participation is covered by the [Code of Conduct](CODE_OF_CONDUCT.md).

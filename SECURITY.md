@@ -44,7 +44,7 @@ fixes. Fixes ship in a new patch or minor release rather than being backported.
 ## In scope
 
 Issues in this repository's code, particularly anything that breaks a stated guarantee in the
-[security model](docs/security.md):
+[security and privacy model](docs/privacy.md):
 
 - Terminal **input** or keystrokes appearing in a recording.
 - The recorder reading or writing the user's Claude Code settings files, or leaving injected hook
@@ -78,5 +78,5 @@ regular issues or feature requests:
 
 ## Related
 
-- [docs/security.md](docs/security.md) — the full threat model: what is recorded, what is never
+- [docs/privacy.md](docs/privacy.md) — the full threat model: what is recorded, what is never
   recorded, network posture, and what to check before sharing a recording.

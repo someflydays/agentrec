@@ -1,8 +1,8 @@
 # Roadmap
 
-**Status:** redaction, search, diffing, and fork and replay all shipped in v0.2.0. What
-follows describes the design of each; the remaining unchecked work is dashboard integration and
-other-agent adapters.
+**Status:** redaction, search, diffing, and fork and replay all shipped in v0.2.0, and all three
+reached the dashboard in v0.3.0. What follows describes the design of each; the remaining unchecked
+work is other-agent adapters.
 
 Where agentrec is going, in order, with enough design detail that each item can be picked up and
 built. Tracked as [issues](https://github.com/someflydays/agentrec/issues) grouped into milestones;
@@ -59,8 +59,8 @@ audit before sharing.
 ## Shipped in v0.2 — Full-text search
 
 `agentrec search <query>` across prompts, assistant text, tool inputs and outputs, and file paths,
-returning sessions and the matching events. Shipped CLI-only; the dashboard search box is still
-outstanding.
+returning sessions and the matching events. Shipped CLI-first; the dashboard search palette followed
+in v0.3.
 
 Design sketch: Node 22.13+ ships `node:sqlite`, so an FTS5 index at `~/.agentrec/index.db` costs no
 native dependency. The index is a rebuildable cache over the JSONL files (source of truth stays
