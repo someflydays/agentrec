@@ -15,18 +15,28 @@ export const DEFAULT_UI_PORT = 4040;
 export interface UiServerOptions {
   port: number;
   open: boolean;
+  /** Lets the dashboard spawn agents, which is why it is off unless asked for. */
+  allowFork?: boolean;
   store?: SessionStore;
 }
 
 export async function startUiServer(options: UiServerOptions): Promise<Server> {
   const store = options.store ?? new SessionStore();
   const distDir = resolveDashboardDist();
-  const server = createServer(createRequestListener({ store, distDir }));
+  const allowFork = options.allowFork === true;
+  const server = createServer(createRequestListener({ store, distDir, allowFork }));
   const port = await listen(server, options.port);
   const url = `http://${HOST}:${port}`;
 
   console.log(`${pc.bold("agentrec")} dashboard  ${pc.cyan(url)}`);
   console.log(pc.dim(`  sessions  ${store.sessionsDir}`));
+  if (allowFork) {
+    console.log(
+      pc.yellow(
+        `  ${pc.bold("fork enabled")}  this page can start agent sessions that spend tokens and run tools`,
+      ),
+    );
+  }
   console.log(pc.dim("  ctrl-c to stop"));
 
   if (options.open) openBrowser(url);

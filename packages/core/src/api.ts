@@ -47,7 +47,7 @@ export interface SessionEventsResponse {
 
 export interface SearchResponse {
   results: SearchResult[];
-  /** Echoed back so a stale response can be discarded by the client. */
+  /** Echoed back so a stale response can be discarded by the client; "" when no query was given. */
   query: string;
 }
 
@@ -65,7 +65,11 @@ export interface ForkPoint {
 
 export interface ForkPointsResponse {
   points: ForkPoint[];
-  /** Absent when the underlying agent transcript is no longer on disk. */
+  /**
+   * False when the session cannot be forked — most often because the agent's
+   * own transcript is no longer on disk. This is a normal state for imported
+   * or expired sessions, so the route still answers 200.
+   */
   available: boolean;
   /** Why forking is unavailable, when it is. */
   reason?: string;
@@ -97,6 +101,24 @@ export interface CapabilitiesResponse {
 }
 
 export const FORK_TOKEN_HEADER = "x-agentrec-token";
+
+/** Body of every non-2xx response from the dashboard server. */
+export interface ApiErrorBody {
+  error: string;
+}
+
+/**
+ * Status codes the dashboard branches on. Anything else should be treated as
+ * an unexpected failure and surfaced verbatim from `ApiErrorBody.error`.
+ *
+ * - 400 malformed input (missing query param, bad seq, empty prompt)
+ * - 403 rejected by the origin/host guard, or a bad fork token
+ * - 404 unknown session, or the fork route on a server that does not allow forking
+ * - 409 a fork is already running
+ * - 413 request body too large
+ * - 415 wrong content-type on a POST
+ */
+export type ApiErrorStatus = 400 | 403 | 404 | 409 | 413 | 415 | 500;
 
 /**
  * SSE payloads for live follow. Each SSE `data:` line carries one JSON-encoded

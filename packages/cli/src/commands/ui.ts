@@ -4,6 +4,7 @@ import { DEFAULT_UI_PORT, startUiServer } from "../server/index.js";
 interface UiOptions {
   port: string;
   open: boolean;
+  allowFork?: boolean;
 }
 
 export function registerUiCommand(program: Command): void {
@@ -12,8 +13,13 @@ export function registerUiCommand(program: Command): void {
     .description("Browse and replay recorded sessions in a local dashboard")
     .option("--port <n>", "port to listen on", String(DEFAULT_UI_PORT))
     .option("--no-open", "do not open a browser window")
+    .option("--allow-fork", "let the dashboard start forked agent sessions")
     .action(async (options: UiOptions) => {
-      await startUiServer({ port: parsePort(options.port), open: options.open });
+      await startUiServer({
+        port: parsePort(options.port),
+        open: options.open,
+        allowFork: options.allowFork === true,
+      });
     });
 }
 
