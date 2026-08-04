@@ -40,8 +40,8 @@ ID          TITLE                         AGE  DUR  PROMPTS  TOOLS  TOKENS  COST
 01K1YMT3XR  Fix flaky auth test           2h    6m        2     18   96.4k  $0.15
 ```
 
-No account, no daemon, no config file to write. `abb` is installed as a shorter alias, and
-`npx agentrec claude` works for a one-off recording without installing anything.
+No account, no daemon, no config file to write. `npx agentrec claude` works for a one-off
+recording without installing anything.
 
 ## Features
 
@@ -56,6 +56,10 @@ No account, no daemon, no config file to write. `abb` is installed as a shorter 
 - File-change diffs collected per session, so you can see what the agent touched and how.
 - Live sessions stream into the dashboard over SSE while they are still running.
 - `export` bundles a session into one portable `.agentlog` file; `open` imports it anywhere.
+- `export --redact` scrubs credentials from the exported copy before you share it.
+- `search` runs full-text search across every recorded session, down to the matching event.
+- `diff` compares two runs of the same task: what differed in tools, files, commands, and cost.
+- `fork` reruns a session from any point with a changed instruction (experimental).
 - Everything is local: no telemetry, no network calls, dashboard bound to `127.0.0.1`.
 - `agentrec ls --json` for scripting.
 
@@ -128,6 +132,38 @@ Session ids can be given as an unambiguous prefix, so `01K1YQ7P8Z` is enough. At
 `.agentlog` to an issue and a maintainer can watch the exact session that went wrong instead of
 reading a paraphrase of it. Read [Privacy and security](#privacy-and-security) before you do.
 
+## Working with recordings
+
+Recordings are only useful if you can find things in them, compare them, and share them safely.
+
+```bash
+agentrec search "flaky watchdog"        # full-text across prompts, tool IO, and file paths
+agentrec diff 01K1YQ7P8Z 01K1YMT3XR     # what differed between two runs of the same task
+agentrec export 01K1YQ7P8Z --redact     # pack a session with credentials scrubbed
+```
+
+`search` indexes every session into a local SQLite index and returns the matching events with
+their timestamps, so you can jump straight to the moment in the replay. `diff` pairs up turns and
+tool calls between two sessions and reports what actually changed — commands, files, failures,
+tokens, cost. Both are read-only over the stored JSONL, which stays the source of truth.
+
+### Fork and replay (experimental)
+
+Rerun a session from any point with a different instruction:
+
+```bash
+agentrec fork 01K1YQ7P8Z --list --experimental              # pick a fork point
+agentrec fork 01K1YQ7P8Z --at 12 --experimental --dry-run   # see the plan first
+agentrec fork 01K1YQ7P8Z --at 12 --prompt "use a fake clock instead" --experimental
+```
+
+This truncates the session's Claude Code transcript at the chosen event and resumes from there, so
+the agent picks up with the same context but a new instruction — and the fork is itself recorded.
+It depends on Claude Code transcript internals that are not a public contract, which is why it is
+gated behind `--experimental` and refuses to run against an unrecognized version rather than
+producing a corrupted session. Your **working tree is not rewound**: forking replays the
+conversation, not the files on disk.
+
 ## Privacy and security
 
 The recorder is local-only by construction:
@@ -166,10 +202,13 @@ is the other two channels layered on the same clock.
 
 [docs/roadmap.md](docs/roadmap.md) has the design detail behind each item.
 
-- [ ] Fork and replay: rerun a session from any point with a changed instruction
-- [ ] Secret redaction pass on export
-- [ ] Full-text search across recorded sessions
-- [ ] Session diffing
+- [x] Secret redaction pass on export — `export --redact`
+- [x] Full-text search across recorded sessions — `search`
+- [x] Session diffing — `diff`
+- [x] Fork and replay: rerun a session from any point with a changed instruction — `fork`
+  (experimental)
+- [ ] Fork from the dashboard timeline, not just the CLI
+- [ ] Search and diff in the dashboard
 - [ ] Adapters for coding agents other than Claude Code
 
 ## Contributing

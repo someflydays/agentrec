@@ -1,5 +1,9 @@
 # Roadmap
 
+**Status:** redaction, search, diffing, and fork and replay all shipped in v0.2.0. What
+follows describes the design of each; the remaining unchecked work is dashboard integration and
+other-agent adapters.
+
 Where agentrec is going, in order, with enough design detail that each item can be picked up and
 built. Tracked as [issues](https://github.com/someflydays/agentrec/issues) grouped into milestones;
 this document is the narrative version.
@@ -15,7 +19,7 @@ Three principles constrain everything below:
   failures degrade to fewer channels rather than broken sessions, and the recorder adds no
   perceptible latency.
 
-## v0.2 — Fork and replay (experimental)
+## Shipped in v0.2 — Fork and replay (experimental)
 
 Rerun a session from any point with a changed instruction: click a timeline event, edit the prompt
 that followed it, and launch a new session that begins from exactly that state of the conversation.
@@ -39,7 +43,7 @@ error rather than a corrupted session when the format shifts. Filesystem state i
 forking replays the conversation, not the working tree; pairing with `git stash`/worktrees is the
 user's call (documented, not automated, in v0.2).
 
-## v0.2 — Redaction pass on export
+## Shipped in v0.2 — Redaction pass on export
 
 `.agentlog` files get shared; screens contain secrets. `agentrec export --redact` runs a scrubbing
 pass over every channel before packing: terminal cast output, tool inputs/outputs, prompts,
@@ -47,34 +51,32 @@ assistant text, and diffs.
 
 Design sketch: a pattern registry (default: common credential shapes — AWS/GitHub/Anthropic/OpenAI
 key prefixes, `Bearer` headers, PEM blocks, `.env`-style assignments) plus a high-entropy-string
-heuristic, replacing matches with `[REDACTED:<label>]`. Patterns are pluggable via
-`~/.agentrec/redact.json`. Redaction is destructive by design and only ever applied to the exported
-copy, never the stored session. `--redact` prints a summary of what was replaced so the user can
+heuristic, replacing matches with `[REDACTED:<label>]`. Patterns are pluggable through the
+module's options; a `~/.agentrec/redact.json` config file is not wired up yet. Redaction is
+destructive by design and only ever applied to the exported copy, never the stored session. `--redact` prints a summary of what was replaced so the user can
 audit before sharing.
 
-## v0.3 — Full-text search
+## Shipped in v0.2 — Full-text search
 
-`agentrec search <query>` and a dashboard search box, across prompts, assistant text, tool inputs
-and outputs, and file paths, returning sessions and the matching events with seq-deep links into
-the replay.
+`agentrec search <query>` across prompts, assistant text, tool inputs and outputs, and file paths,
+returning sessions and the matching events. Shipped CLI-only; the dashboard search box is still
+outstanding.
 
 Design sketch: Node 22.13+ ships `node:sqlite`, so an FTS5 index at `~/.agentrec/index.db` costs no
 native dependency. The index is a rebuildable cache over the JSONL files (source of truth stays
-plain text); `agentrec ui` and `search` update it incrementally by mtime. Dashboard results jump
-straight to the event in the timeline with the terminal seeked to that moment.
+plain text); `search` updates it incrementally by mtime.
 
-## v0.3 — Session diffing
+## Shipped in v0.2 — Session diffing
 
 Compare two sessions side by side: same task attempted twice, before/after a prompt change, or two
 model choices. Align on prompts and tool-call sequences, then surface what differed — files
 touched, commands run, retries, token/cost totals, wall-clock duration.
 
-Design sketch: alignment is heuristic (prompt text similarity, then tool-name sequence alignment),
-rendered as a two-column timeline with divergence markers. Ships CLI-first
-(`agentrec diff <a> <b>` with a summary table) to validate the alignment before investing in the
-two-column UI.
+Design sketch: alignment is heuristic (prompt text similarity, then tool-name sequence alignment).
+Shipped CLI-first (`agentrec diff <a> <b>` with a summary table, `--full` for the per-turn tool
+alignment) to validate the alignment before investing in a two-column UI.
 
-## v0.4 — Adapters for other coding agents
+## Next — Adapters for other coding agents
 
 The PTY and cast layers are agent-agnostic today; only hooks and transcript tailing are
 Claude-Code-specific. An adapter interface makes that explicit:
@@ -91,6 +93,12 @@ Every command already records at the PTY tier (cast only); adapters add the stru
 the agent exposes them. First targets, chosen by what they expose: Codex CLI and Gemini CLI
 (session logs), opencode (event stream). `meta.agent` widens from `"claude-code"` to a string with
 a registry — an additive format change.
+
+## Next — dashboard integration
+
+The CLI has search, diff, and fork; the dashboard has none of them yet. Fork especially wants to be
+a timeline affordance ("fork from here") rather than a `--at <seq>` flag, which is how the feature
+was originally pitched.
 
 ## Continuous — hardening
 
