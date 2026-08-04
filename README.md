@@ -164,13 +164,13 @@ is the other two channels layered on the same clock.
 
 ## Roadmap
 
-Not built yet. Listed so you know where this is going:
+[docs/roadmap.md](docs/roadmap.md) has the design detail behind each item.
 
 - [ ] Fork and replay: rerun a session from any point with a changed instruction
-- [ ] Adapters for coding agents other than Claude Code
 - [ ] Secret redaction pass on export
 - [ ] Full-text search across recorded sessions
 - [ ] Session diffing
+- [ ] Adapters for coding agents other than Claude Code
 
 ## Contributing
 
