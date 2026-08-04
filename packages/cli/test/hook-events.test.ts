@@ -113,17 +113,25 @@ describe("mapHookPayload against real captured payloads", () => {
   });
 
   /**
-   * The diff spans only the replaced substring from tool_input, not the whole
-   * line: the richer originalFile/structuredPatch that the real tool_response
-   * carries is not read today.
+   * The real tool_response carries a positioned structuredPatch, so the diff is
+   * the genuine unified diff Claude Code computed — real line numbers and the
+   * whole changed line, not just the replaced substring from tool_input.
    */
-  it("derives a file.change from a real Edit", () => {
+  it("derives a positioned unified diff from a real Edit's structuredPatch", () => {
     const mapped = mapHookPayload(fixture("post-tool-use-edit"));
     expect(mapped.events.map((event) => event.type)).toEqual(["tool.end", "file.change"]);
-    const change = mapped.events[1]?.data as { kind: string; diff: string };
+    const change = mapped.events[1]?.data as { kind: string; diff: string; path: string };
     expect(change.kind).toBe("edit");
-    expect(change.diff).toContain("-const a = 1");
-    expect(change.diff).toContain("+const a = 2");
+    const path = change.path.replace(/^\/+/, "");
+    expect(change.diff).toBe(
+      [
+        `--- a/${path}`,
+        `+++ b/${path}`,
+        "@@ -1,1 +1,1 @@",
+        "-export const a = 1;",
+        "+export const a = 2;",
+      ].join("\n"),
+    );
   });
 
   /**

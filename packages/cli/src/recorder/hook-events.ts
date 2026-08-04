@@ -78,8 +78,9 @@ function mapPostToolUse(root: Record<string, unknown>): PendingEvent[] {
       data: { name, ok, ...(output !== undefined ? { output } : {}), ...ids },
     },
   ];
-  // A failed write never happened, so no file.change is derived for it.
-  const change = ok ? deriveFileChange(name, root.tool_input) : undefined;
+  // A failed write never happened, so no file.change is derived for it. The
+  // response carries the positioned structuredPatch the real diff is rendered from.
+  const change = ok ? deriveFileChange(name, root.tool_input, response) : undefined;
   if (change !== undefined) {
     events.push({ type: "file.change", data: { ...change, ...ids } });
   }
