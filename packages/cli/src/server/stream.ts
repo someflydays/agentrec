@@ -8,6 +8,7 @@ import {
   type SessionStore,
   type StreamMessage,
 } from "@agentrec/core";
+import { sendError } from "./http.js";
 
 /**
  * The recorder appends to events.jsonl and terminal.cast from a separate
@@ -18,16 +19,24 @@ const POLL_INTERVAL_MS = 300;
 
 const LINE_FEED = 0x0a;
 
+/** Highest event seq the client already holds; everything after it is replayed. */
+const SINCE_SEQ_PARAM = "since-seq";
+
 /** Yields whole lines appended to a growing file, tolerating torn writes. */
 class LineTailer {
   private readonly path: string;
   private offset: number;
   private pending: Buffer;
 
-  /** Starts at the current end of file: only future appends are emitted. */
-  constructor(path: string) {
+  /**
+   * Starts at the current end of file, so only future appends are emitted.
+   * `fromStart` instead begins at byte 0: the first poll returns everything on
+   * disk and leaves the offset exactly where that read stopped, so replay and
+   * tail share one boundary.
+   */
+  constructor(path: string, fromStart = false) {
     this.path = path;
-    this.offset = existsSync(path) ? statSync(path).size : 0;
+    this.offset = fromStart || !existsSync(path) ? 0 : statSync(path).size;
     this.pending = Buffer.alloc(0);
   }
 
@@ -67,31 +76,64 @@ class LineTailer {
   }
 }
 
-export function handleSessionStream(store: SessionStore, id: string, res: ServerResponse): void {
+/**
+ * Follows a session. With `?since-seq=<n>` the events already on disk past seq
+ * `n` are replayed before tailing starts, which closes the window between the
+ * client's `/events` fetch and this subscription.
+ *
+ * Cast frames carry no seq, so that channel is always tailed from the current
+ * end of file: terminal output written during the same window is not recovered.
+ */
+export function handleSessionStream(
+  store: SessionStore,
+  id: string,
+  params: URLSearchParams,
+  res: ServerResponse,
+): void {
+  const raw = params.get(SINCE_SEQ_PARAM);
+  const since = parseSinceSeq(raw);
+  if (since === INVALID) {
+    sendError(res, 400, `invalid ${SINCE_SEQ_PARAM} "${raw ?? ""}" — expected an integer`);
+    return;
+  }
+
   res.writeHead(200, {
     "content-type": "text/event-stream",
     "cache-control": "no-cache",
     connection: "keep-alive",
   });
+  // Node holds headers back until the first frame; without this a subscriber to
+  // a quiet session is not considered connected until something happens to it.
+  res.flushHeaders();
 
   const send = (message: StreamMessage): void => {
     res.write(`event: ${message.kind}\ndata: ${JSON.stringify(message)}\n\n`);
   };
 
+  // Meta is read before the replay so nothing can be dropped at the far end
+  // either: the recorder writes session.end and only then stamps endedAt, so a
+  // session that ends after this read has its last event on disk already.
   const initial = readMeta(store, id);
+  const events = new LineTailer(join(store.sessionDir(id), EVENTS_FILE), since !== null);
+  if (since !== null) {
+    for (const event of pollEvents(events)) {
+      if (event.seq > since) send({ kind: "event", event });
+    }
+  }
+
   if (initial === null || initial.endedAt !== undefined) {
     send({ kind: "end", exitCode: initial?.exitCode ?? null });
     res.end();
     return;
   }
 
-  const events = new LineTailer(join(store.sessionDir(id), EVENTS_FILE));
   const cast = new LineTailer(store.castPath(id));
 
+  // Tailing resumes from the byte the replay stopped at, so an event appended
+  // while the request was in flight lands in exactly one of the two.
   const drain = (): void => {
-    for (const line of events.poll()) {
-      const event = parseEvent(line);
-      if (event !== null) send({ kind: "event", event });
+    for (const event of pollEvents(events)) {
+      send({ kind: "event", event });
     }
     for (const line of cast.poll()) {
       send({ kind: "cast", line });
@@ -112,6 +154,23 @@ export function handleSessionStream(store: SessionStore, id: string, res: Server
   res.on("close", () => {
     clearInterval(timer);
   });
+}
+
+const INVALID = "invalid";
+
+function parseSinceSeq(raw: string | null): number | null | typeof INVALID {
+  if (raw === null || raw.length === 0) return null;
+  const parsed = Number(raw);
+  return Number.isInteger(parsed) ? parsed : INVALID;
+}
+
+function pollEvents(tailer: LineTailer): SessionEvent[] {
+  const events: SessionEvent[] = [];
+  for (const line of tailer.poll()) {
+    const event = parseEvent(line);
+    if (event !== null) events.push(event);
+  }
+  return events;
 }
 
 function parseEvent(line: string): SessionEvent | null {

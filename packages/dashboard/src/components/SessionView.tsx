@@ -129,23 +129,28 @@ export function SessionView(props: SessionViewProps): ReactElement {
       });
   }, [id]);
 
-  useLiveStream(id, live, {
-    onEvent: (event) => {
-      setEvents((current) => {
-        const last = current[current.length - 1];
-        if (last !== undefined && event.seq <= last.seq) return current;
-        return [...current, event];
-      });
+  useLiveStream(
+    id,
+    live,
+    {
+      onEvent: (event) => {
+        setEvents((current) => {
+          const last = current[current.length - 1];
+          if (last !== undefined && event.seq <= last.seq) return current;
+          return [...current, event];
+        });
+      },
+      onCastLine: (line) => {
+        const parsed = parseCastLine(line);
+        if (parsed !== null) playerRef.current?.appendLive(parsed);
+      },
+      onEnd: () => {
+        refreshDetail();
+        props.onSessionChanged();
+      },
     },
-    onCastLine: (line) => {
-      const parsed = parseCastLine(line);
-      if (parsed !== null) playerRef.current?.appendLive(parsed);
-    },
-    onEnd: () => {
-      refreshDetail();
-      props.onSessionChanged();
-    },
-  });
+    events[events.length - 1]?.seq ?? null,
+  );
 
   const rows = useMemo(() => buildTimeline(events), [events]);
   const visibleRows = useMemo(() => rows.filter((row) => isVisible(row, filters)), [rows, filters]);

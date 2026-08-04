@@ -84,7 +84,8 @@ function dispatch(
     return;
   }
   if (pathname.startsWith(SESSION_PREFIX)) {
-    handleSessionRoute(options.store, fork, pathname.slice(SESSION_PREFIX.length), req, res);
+    const rest = pathname.slice(SESSION_PREFIX.length);
+    handleSessionRoute(options.store, fork, rest, url.searchParams, req, res);
     return;
   }
   if (pathname.startsWith(API_PREFIX)) {
@@ -98,6 +99,7 @@ function handleSessionRoute(
   store: SessionStore,
   fork: ForkHandler | null,
   rest: string,
+  params: URLSearchParams,
   req: IncomingMessage,
   res: ServerResponse,
 ): void {
@@ -136,7 +138,7 @@ function handleSessionRoute(
       handleSessionCast(store, id, res);
       return;
     case "stream":
-      handleSessionStream(store, id, res);
+      handleSessionStream(store, id, params, res);
       return;
     case "fork-points":
       handleForkPoints(store, id, res);

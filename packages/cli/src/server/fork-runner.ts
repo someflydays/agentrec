@@ -1,29 +1,20 @@
-import { spawn } from "node:child_process";
 import { dirname } from "node:path";
-import type { Readable } from "node:stream";
 import { fileURLToPath } from "node:url";
-import { CastWriter, type SessionMeta, type SessionStore } from "@agentrec/core";
+import type { SessionStore } from "@agentrec/core";
 import {
   checkForkSupport,
   claudeVersion,
   cutIndexForEvent,
   newAgentSessionId,
   planFork,
+  plannedUuids,
   readTranscriptLines,
   resolveTranscriptPath,
   writeForkedTranscript,
 } from "../recorder/fork.js";
-import { mapHookPayload } from "../recorder/hook-events.js";
-import { hookSettingsArgs } from "../recorder/hooks-settings.js";
-import { startIngestServer } from "../recorder/ingest-server.js";
-import { TranscriptTailer } from "../recorder/transcript-tailer.js";
-import { cliVersion } from "../version.js";
+import { startRecordedSession } from "../recorder/session-runner.js";
 
 const AGENT_FILE = "claude";
-
-/** A print-mode fork owns no terminal, so its cast is written at a fixed size. */
-const CAST_COLS = 80;
-const CAST_ROWS = 24;
 
 export interface ForkLaunchRequest {
   store: SessionStore;
@@ -55,101 +46,6 @@ export class ForkRequestError extends Error {
 /** The running CLI entry point, which the injected hook command re-invokes. */
 function cliEntry(): string {
   return process.argv[1] ?? fileURLToPath(import.meta.url);
-}
-
-interface RecordOptions {
-  store: SessionStore;
-  /** argv as the user would have typed it, without the injected hook settings. */
-  command: string[];
-  cwd: string;
-  forkedFrom: { sessionId: string; seq: number };
-}
-
-async function record(options: RecordOptions): Promise<ForkLaunch> {
-  const { store, command, cwd } = options;
-  store.ensure();
-  const meta: Omit<SessionMeta, "formatVersion"> = {
-    id: store.newSessionId(),
-    agent: "claude-code",
-    command,
-    cwd,
-    startedAt: new Date().toISOString(),
-    recorderVersion: cliVersion(),
-    forkedFrom: options.forkedFrom,
-  };
-  const writer = store.createSession(meta);
-
-  let tailer: TranscriptTailer | undefined;
-  const ingest = await startIngestServer({
-    onPayload: (payload) => {
-      const mapped = mapHookPayload(payload);
-      if (mapped.agentSessionId !== undefined && writer.sessionMeta.agentSessionId === undefined) {
-        writer.updateMeta({ agentSessionId: mapped.agentSessionId });
-      }
-      if (mapped.transcriptPath !== undefined && tailer === undefined) {
-        tailer = new TranscriptTailer(mapped.transcriptPath, writer);
-        tailer.start();
-      }
-      for (const event of mapped.events) writer.event(event.type, event.data);
-    },
-    onError: (message) => {
-      writer.event("recorder.error", { source: "ingest", message });
-    },
-  });
-
-  const cast = new CastWriter(writer.castPath, {
-    width: CAST_COLS,
-    height: CAST_ROWS,
-    title: command.join(" "),
-    timestamp: Math.floor(Date.now() / 1000),
-  });
-
-  // The prompt came from a browser and is handed over as one argv element:
-  // spawn runs the agent directly, with no shell anywhere to interpret it.
-  const child = spawn(
-    AGENT_FILE,
-    [...command.slice(1), ...hookSettingsArgs(process.execPath, cliEntry())],
-    {
-      cwd,
-      env: {
-        ...process.env,
-        AGENTREC_INGEST_URL: ingest.url,
-        AGENTREC_INGEST_TOKEN: ingest.token,
-      },
-      stdio: ["ignore", "pipe", "pipe"],
-    },
-  );
-
-  const tee = (stream: Readable | null): void => {
-    stream?.setEncoding("utf8");
-    stream?.on("data", (chunk: string) => {
-      cast.output(writer.elapsedMs(), chunk);
-    });
-  };
-  tee(child.stdout);
-  tee(child.stderr);
-
-  let closed = false;
-  const done = new Promise<void>((resolve) => {
-    const finish = async (exitCode: number | null): Promise<void> => {
-      if (closed) return;
-      closed = true;
-      tailer?.stop();
-      await cast.close();
-      writer.end(exitCode);
-      await ingest.close();
-      resolve();
-    };
-    child.once("error", (error: Error) => {
-      writer.event("recorder.error", { source: "spawn", message: error.message });
-      void finish(null);
-    });
-    child.once("close", (exitCode) => {
-      void finish(exitCode);
-    });
-  });
-
-  return { sessionId: meta.id, done };
 }
 
 /**
@@ -198,10 +94,17 @@ export async function launchFork(request: ForkLaunchRequest): Promise<ForkLaunch
   }
   writeForkedTranscript(plan.lines, agentSessionId, dirname(transcriptPath));
 
-  return record({
+  // The prompt came from a browser and is handed over as one argv element; the
+  // headless mode spawns the agent directly, with no shell to interpret it.
+  const session = await startRecordedSession({
     store,
     command: [AGENT_FILE, "--resume", agentSessionId, "--fork-session", "-p", prompt],
     cwd: meta.cwd,
+    mode: "headless",
+    cliEntry: cliEntry(),
     forkedFrom: { sessionId, seq },
+    // The replayed conversation is already recorded against the parent.
+    inheritedUuids: plannedUuids(plan.lines),
   });
+  return { sessionId: session.id, done: session.done.then(() => undefined) };
 }

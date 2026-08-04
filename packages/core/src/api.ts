@@ -16,7 +16,15 @@ export const API_ROUTES = {
   events: (id: string) => `/api/sessions/${id}/events`,
   /** GET → text/plain, raw asciinema v2 cast (404 when absent) */
   cast: (id: string) => `/api/sessions/${id}/cast`,
-  /** GET → text/event-stream of StreamMessage for live sessions */
+  /**
+   * GET ?since-seq= → text/event-stream of StreamMessage for live sessions.
+   *
+   * `since-seq` is the highest event seq the client already has: the server
+   * replays everything past it from disk before tailing, which is how an event
+   * written between the client's `events` fetch and this subscription is not
+   * lost. Omit it to receive only what is appended from now on. Cast frames
+   * have no seq and are always tailed from the end, replay or not.
+   */
   stream: (id: string) => `/api/sessions/${id}/stream`,
   /** GET ?q= &limit= &session= &type= (repeatable) → SearchResponse */
   search: "/api/search",
