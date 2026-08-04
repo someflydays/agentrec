@@ -1,6 +1,7 @@
 import { closeSync, openSync, readSync, statSync } from "node:fs";
 import { StringDecoder } from "node:string_decoder";
 import { type SessionWriter, TranscriptParser } from "@agentrec/core";
+import { asNonEmptyString, asRecord } from "./json.js";
 
 /**
  * Claude Code appends to its JSONL transcript as it streams. Polling by size
@@ -9,6 +10,22 @@ import { type SessionWriter, TranscriptParser } from "@agentrec/core";
  * hook fires, and is recreated on /clear — both show up as a size reset.
  */
 const POLL_INTERVAL_MS = 400;
+
+/**
+ * Conversation lines carry a `uuid` that Claude Code chains through
+ * `parentUuid`; it is the only stable identity of a line, since the file is
+ * rewritten on compaction and byte offsets do not survive that. Stamping it on
+ * the events read from a line lets `agentrec fork` cut at that exact line.
+ */
+function lineUuid(line: string): string | undefined {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(line);
+  } catch {
+    return undefined;
+  }
+  return asNonEmptyString(asRecord(parsed)?.uuid);
+}
 
 export class TranscriptTailer {
   private readonly path: string;
@@ -74,13 +91,19 @@ export class TranscriptTailer {
     const lines = (this.partial + text).split("\n");
     this.partial = lines.pop() ?? "";
     for (const line of lines) {
-      for (const observation of this.parser.observe(line)) {
+      const observations = this.parser.observe(line);
+      // Only lines that carried something worth recording are parsed a second
+      // time for their uuid.
+      const uuid = observations.length > 0 ? lineUuid(line) : undefined;
+      const from = uuid !== undefined ? { transcriptUuid: uuid } : {};
+      for (const observation of observations) {
         switch (observation.kind) {
           case "assistant-text":
             this.writer.event("assistant.text", {
               text: observation.text,
               ...(observation.model !== undefined ? { model: observation.model } : {}),
               ...(observation.requestId !== undefined ? { requestId: observation.requestId } : {}),
+              ...from,
             });
             break;
           case "usage":
@@ -88,6 +111,7 @@ export class TranscriptTailer {
               model: observation.model,
               requestId: observation.requestId,
               usage: observation.usage,
+              ...from,
             });
             break;
           case "title":

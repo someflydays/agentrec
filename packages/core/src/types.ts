@@ -19,6 +19,8 @@ export interface SessionMeta {
   agentSessionId?: string;
   gitBranch?: string;
   recorderVersion?: string;
+  /** Set when this session was started by `agentrec fork`, naming its origin. */
+  forkedFrom?: { sessionId: string; seq: number };
 }
 
 export interface TokenUsage {
@@ -74,15 +76,20 @@ export type ToolEndEvent = BaseEvent<
   { name: string; ok: boolean; output?: string; toolUseId?: string }
 >;
 
+/**
+ * `transcriptUuid` is the `uuid` of the agent transcript line this was read
+ * from, recorded when the capture path knows it so `agentrec fork` can cut the
+ * conversation at exactly that line instead of guessing by timestamp.
+ */
 export type AssistantTextEvent = BaseEvent<
   "assistant.text",
-  { text: string; model?: string; requestId?: string }
+  { text: string; model?: string; requestId?: string; transcriptUuid?: string }
 >;
 
 /** Emitted once per API request (deduplicated by requestId at capture time). */
 export type UsageEvent = BaseEvent<
   "usage",
-  { model: string; requestId: string; usage: TokenUsage }
+  { model: string; requestId: string; usage: TokenUsage; transcriptUuid?: string }
 >;
 
 export type FileChangeEvent = BaseEvent<
