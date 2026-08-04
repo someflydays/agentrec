@@ -1,8 +1,11 @@
 import { mkdirSync, rmSync, statSync } from "node:fs";
 import { join } from "node:path";
 import type { DatabaseSync, SQLInputValue, SQLOutputValue } from "node:sqlite";
+import { MATCH_CLOSE, MATCH_OPEN, type SearchOptions, type SearchResult } from "./search-format.js";
 import { EVENTS_FILE, type SessionStore } from "./session-store.js";
 import type { SessionEvent, SessionEventType } from "./types.js";
+
+export * from "./search-format.js";
 
 /**
  * An FTS5 index over recorded sessions, kept at <store root>/index.db. The
@@ -12,10 +15,6 @@ import type { SessionEvent, SessionEventType } from "./types.js";
  */
 export const SEARCH_SCHEMA_VERSION = 1;
 export const INDEX_FILE = "index.db";
-
-/** Delimiters around matched terms in a snippet; control codes never collide with indexed text. */
-export const MATCH_OPEN = "\u0002";
-export const MATCH_CLOSE = "\u0003";
 
 const SNIPPET_ELLIPSIS = "…";
 const SNIPPET_TOKENS = 16;
@@ -28,31 +27,6 @@ const MAX_QUERY_TERMS = 32;
 const MAX_TERM_CHARS = 256;
 
 const MALFORMED_QUERY = /fts5: syntax error|no such column/;
-
-export interface SearchOptions {
-  /** Maximum hits to return. Default 20. */
-  limit?: number;
-  /** Restrict to one session id (exact, not a prefix). */
-  sessionId?: string;
-  /** Restrict to these event types. */
-  types?: SessionEventType[];
-  /** Pass the query to FTS5 verbatim instead of quoting it; malformed syntax throws. */
-  raw?: boolean;
-}
-
-export interface SearchResult {
-  sessionId: string;
-  sessionTitle?: string;
-  sessionStartedAt: string;
-  seq: number;
-  type: SessionEventType;
-  /** Milliseconds since the session started, mirroring SessionEvent.t. */
-  t: number;
-  /** Matched terms wrapped in MATCH_OPEN/MATCH_CLOSE. */
-  snippet: string;
-  /** FTS5 bm25 score; more negative is a better match. */
-  score: number;
-}
 
 export interface SyncStats {
   /** Sessions read from disk and written into the index. */

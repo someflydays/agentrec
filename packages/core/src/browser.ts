@@ -5,7 +5,9 @@
  */
 export * from "./api.js";
 export * from "./cast-format.js";
+export * from "./diff.js";
 export * from "./pricing.js";
+export * from "./search-format.js";
 export * from "./summary.js";
 export * from "./transcript.js";
 export * from "./types.js";

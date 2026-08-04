@@ -7,6 +7,7 @@ interface SidebarProps {
   error: string | null;
   selectedId: string | null;
   onSelect: (id: string) => void;
+  onSearch: () => void;
 }
 
 export function Sidebar(props: SidebarProps): ReactElement {
@@ -21,6 +22,11 @@ export function Sidebar(props: SidebarProps): ReactElement {
         <p className="sidebar-count">
           {sessions === null ? "loading…" : `${String(sessions.length)} recorded`}
         </p>
+        <button type="button" className="search-trigger" onClick={props.onSearch}>
+          <span className="search-trigger-sigil">/</span>
+          <span className="search-trigger-label">Search everything</span>
+          <kbd className="key">⌘K</kbd>
+        </button>
       </div>
       {props.error !== null ? <p className="sidebar-error">{props.error}</p> : null}
       {sessions !== null && sessions.length === 0 ? (

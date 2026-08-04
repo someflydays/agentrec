@@ -10,10 +10,17 @@ import {
   shortModel,
 } from "../lib/format";
 
-export function SessionHeader(props: { detail: SessionDetailResponse }): ReactElement {
+interface SessionHeaderProps {
+  detail: SessionDetailResponse;
+  onCompare: () => void;
+  onOpenSession: (id: string, seq?: number) => void;
+}
+
+export function SessionHeader(props: SessionHeaderProps): ReactElement {
   const { meta, summary, live } = props.detail;
   const elapsed = live ? Date.now() - Date.parse(meta.startedAt) : summary.durationMs;
   const models = summary.models.map((model) => shortModel(model.model));
+  const origin = meta.forkedFrom;
 
   return (
     <header className="session-head">
@@ -23,6 +30,21 @@ export function SessionHeader(props: { detail: SessionDetailResponse }): ReactEl
         <span className="session-id" title={meta.id}>
           {shortId(meta.id)}
         </span>
+        {origin !== undefined ? (
+          <button
+            type="button"
+            className="lineage"
+            title={`Open ${origin.sessionId} at event #${String(origin.seq)}`}
+            onClick={() => {
+              props.onOpenSession(origin.sessionId, origin.seq);
+            }}
+          >
+            forked from {shortId(origin.sessionId)} at #{origin.seq}
+          </button>
+        ) : null}
+        <button type="button" className="chip" onClick={props.onCompare}>
+          Compare
+        </button>
         <span className="session-loc">
           {/* rtl truncates the uninteresting head of the path; bdi keeps it readable. */}
           <span className="session-cwd" title={meta.cwd}>

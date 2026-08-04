@@ -1,14 +1,19 @@
 import {
+  type CapabilitiesResponse,
   type Cast,
+  type ForkPoint,
+  type ForkPointsResponse,
   parseCast,
   type SessionDetailResponse,
   type SessionEvent,
+  type SessionSummary,
 } from "@agentrec/core/browser";
 import { type ReactElement, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { fetchCast, fetchEvents, fetchSession } from "../api";
+import { fetchCast, fetchEvents, fetchForkPoints, fetchSession } from "../api";
 import { useLiveStream } from "../hooks/useLiveStream";
 import { parseCastLine } from "../lib/cast";
 import { errorText } from "../lib/errors";
+import { isTypingTarget, overlayIsOpen } from "../lib/keyboard";
 import {
   buildTimeline,
   FILTER_KINDS,
@@ -18,6 +23,8 @@ import {
   type TimelineRow,
 } from "../lib/timeline";
 import { ChangesTab } from "./ChangesTab";
+import { DiffPicker } from "./DiffPicker";
+import { ForkPanel } from "./ForkPanel";
 import { SessionHeader } from "./SessionHeader";
 import { type CastStatus, type PlayerHandle, TerminalPane } from "./TerminalPane";
 import { Timeline } from "./Timeline";
@@ -27,8 +34,16 @@ type Tab = "changes" | "usage";
 
 interface SessionViewProps {
   id: string;
+  sessions: SessionSummary[];
+  /** Event seq the route asked to land on, e.g. from a search result. */
+  focusSeq: number | null;
+  /** Changes on every navigation, so re-picking the same result seeks again. */
+  focusNonce: number;
+  capabilities: CapabilitiesResponse | null;
   /** Lets the sidebar pick up a title or an ended session. */
   onSessionChanged: () => void;
+  onOpenSession: (id: string, seq?: number) => void;
+  onOpenDiff: (a: string, b: string) => void;
 }
 
 export function SessionView(props: SessionViewProps): ReactElement {
@@ -43,6 +58,9 @@ export function SessionView(props: SessionViewProps): ReactElement {
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [focusChange, setFocusChange] = useState<string | null>(null);
   const [follow, setFollow] = useState(false);
+  const [forkPoints, setForkPoints] = useState<ForkPointsResponse | null>(null);
+  const [forkTarget, setForkTarget] = useState<ForkPoint | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
   const playerRef = useRef<PlayerHandle | null>(null);
   const live = detail?.live === true;
 
@@ -88,6 +106,18 @@ export function SessionView(props: SessionViewProps): ReactElement {
     };
   }, [id]);
 
+  useEffect(() => {
+    let cancelled = false;
+    setForkPoints(null);
+    setForkTarget(null);
+    void fetchForkPoints(id).then((response) => {
+      if (!cancelled) setForkPoints(response);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
+
   const refreshDetail = useCallback(() => {
     void fetchSession(id)
       .then((response) => {
@@ -120,6 +150,10 @@ export function SessionView(props: SessionViewProps): ReactElement {
   const rows = useMemo(() => buildTimeline(events), [events]);
   const visibleRows = useMemo(() => rows.filter((row) => isVisible(row, filters)), [rows, filters]);
   const changes = useMemo(() => fileRows(rows), [rows]);
+  const forkable = useMemo(
+    () => new Set((forkPoints?.points ?? []).map((point) => String(point.seq))),
+    [forkPoints],
+  );
 
   const selectRow = useCallback(
     (row: TimelineRow) => {
@@ -129,6 +163,30 @@ export function SessionView(props: SessionViewProps): ReactElement {
     },
     [follow],
   );
+
+  const openFork = useCallback(
+    (key: string) => {
+      const point = forkPoints?.points.find((candidate) => String(candidate.seq) === key);
+      if (point !== undefined) setForkTarget(point);
+    },
+    [forkPoints],
+  );
+
+  // A route can name any event; search hits on a tool.end have no row of their
+  // own, so the nearest earlier row is the honest landing place. The cast is in
+  // the token because mounting a terminal jumps it to the end of the recording,
+  // which would otherwise undo a seek that landed first.
+  const appliedFocus = useRef("");
+  useEffect(() => {
+    const seq = props.focusSeq;
+    if (seq === null || rows.length === 0) return;
+    const token = `${String(seq)}:${String(props.focusNonce)}:${cast === null ? "0" : "1"}`;
+    if (appliedFocus.current === token) return;
+    const row = rowAtOrBefore(rows, seq);
+    if (row === null) return;
+    appliedFocus.current = token;
+    selectRow(row);
+  }, [props.focusSeq, props.focusNonce, rows, cast, selectRow]);
 
   const step = useCallback(
     (delta: number) => {
@@ -150,11 +208,10 @@ export function SessionView(props: SessionViewProps): ReactElement {
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent): void => {
       if (event.metaKey || event.ctrlKey || event.altKey) return;
-      const tag = event.target instanceof HTMLElement ? event.target.tagName : "";
-      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      if (overlayIsOpen() || isTypingTarget(event.target)) return;
       if (event.key === " ") {
         // A focused button already toggles on Space via its own activation.
-        if (tag === "BUTTON") return;
+        if (event.target instanceof HTMLElement && event.target.tagName === "BUTTON") return;
         event.preventDefault();
         playerRef.current?.togglePlay();
         return;
@@ -167,13 +224,18 @@ export function SessionView(props: SessionViewProps): ReactElement {
       if (event.key === "k") {
         event.preventDefault();
         step(-1);
+        return;
+      }
+      if (event.key === "f") {
+        event.preventDefault();
+        if (selectedKey !== null) openFork(selectedKey);
       }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => {
       window.removeEventListener("keydown", onKeyDown);
     };
-  }, [step]);
+  }, [step, openFork, selectedKey]);
 
   if (error !== null) {
     return (
@@ -189,7 +251,13 @@ export function SessionView(props: SessionViewProps): ReactElement {
 
   return (
     <div className="session">
-      <SessionHeader detail={detail} />
+      <SessionHeader
+        detail={detail}
+        onCompare={() => {
+          setPickerOpen(true);
+        }}
+        onOpenSession={props.onOpenSession}
+      />
       <div className="session-body">
         <Timeline
           rows={visibleRows}
@@ -205,6 +273,9 @@ export function SessionView(props: SessionViewProps): ReactElement {
             setFocusChange(row.key);
           }}
           tailing={live && follow}
+          forkable={forkable}
+          forkReason={forkUnavailableReason(forkPoints)}
+          onFork={openFork}
         />
         <div className="session-right">
           <TerminalPane
@@ -254,6 +325,36 @@ export function SessionView(props: SessionViewProps): ReactElement {
           </section>
         </div>
       </div>
+
+      {forkTarget !== null ? (
+        <ForkPanel
+          sessionId={id}
+          point={forkTarget}
+          capabilities={props.capabilities}
+          onClose={() => {
+            setForkTarget(null);
+          }}
+          onForked={(forkedId) => {
+            setForkTarget(null);
+            props.onSessionChanged();
+            props.onOpenSession(forkedId);
+          }}
+        />
+      ) : null}
+
+      {pickerOpen ? (
+        <DiffPicker
+          sessions={props.sessions}
+          currentId={id}
+          onClose={() => {
+            setPickerOpen(false);
+          }}
+          onPick={(other) => {
+            setPickerOpen(false);
+            props.onOpenDiff(id, other);
+          }}
+        />
+      ) : null}
     </div>
   );
 }
@@ -271,4 +372,19 @@ function toggle(current: ReadonlySet<FilterKind>, kind: FilterKind): ReadonlySet
   const next = new Set(current);
   if (!next.delete(kind)) next.add(kind);
   return next;
+}
+
+function forkUnavailableReason(points: ForkPointsResponse | null): string | null {
+  if (points === null || points.available) return null;
+  return points.reason ?? "this session cannot be forked";
+}
+
+function rowAtOrBefore(rows: TimelineRow[], seq: number): TimelineRow | null {
+  let best: TimelineRow | null = null;
+  for (const row of rows) {
+    const key = Number.parseInt(row.key, 10);
+    if (!Number.isInteger(key) || key > seq) break;
+    best = row;
+  }
+  return best;
 }

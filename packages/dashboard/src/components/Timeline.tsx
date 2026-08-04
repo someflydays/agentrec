@@ -21,12 +21,19 @@ interface TimelineProps {
   onSelect: (row: TimelineRow) => void;
   onOpenChange: (row: TimelineRow) => void;
   tailing: boolean;
+  /** Row keys the session can be forked from; empty while fork points load. */
+  forkable: ReadonlySet<string>;
+  /** Set when forking is off for this session; shown instead of being hidden. */
+  forkReason: string | null;
+  onFork: (key: string) => void;
 }
 
 export function Timeline(props: TimelineProps): ReactElement {
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => new Set());
   const listRef = useRef<HTMLOListElement>(null);
   const rowCount = props.rows.length;
+  const selectedKey = props.selectedKey;
+  const forkSelected = selectedKey !== null && props.forkable.has(selectedKey);
 
   useEffect(() => {
     const list = listRef.current;
@@ -67,12 +74,29 @@ export function Timeline(props: TimelineProps): ReactElement {
             </button>
           ))}
         </div>
+        <button
+          type="button"
+          className="chip"
+          disabled={!forkSelected}
+          title={forkTitle(props.forkReason, forkSelected)}
+          onClick={() => {
+            if (selectedKey !== null) props.onFork(selectedKey);
+          }}
+        >
+          Fork ƒ
+        </button>
         <span className="pane-meta">
           {rowCount === props.totalRows
             ? `${String(rowCount)} events`
             : `${String(rowCount)} of ${String(props.totalRows)}`}
         </span>
       </header>
+      {props.forkReason !== null ? (
+        <p className="fork-strip">
+          <span className="fork-strip-label">fork unavailable</span>
+          {props.forkReason}
+        </p>
+      ) : null}
       {rowCount === 0 ? (
         <p className="pane-placeholder">No events match the current filters.</p>
       ) : (
@@ -88,6 +112,8 @@ export function Timeline(props: TimelineProps): ReactElement {
                 row={row}
                 selected={row.key === props.selectedKey}
                 expanded={expanded.has(row.key)}
+                forkable={props.forkable.has(row.key)}
+                onFork={props.onFork}
                 onActivate={() => {
                   props.onSelect(row);
                   if (row.kind === "file") props.onOpenChange(row);
@@ -106,6 +132,8 @@ interface RowViewProps {
   row: Exclude<TimelineRow, { kind: "turn" }>;
   selected: boolean;
   expanded: boolean;
+  forkable: boolean;
+  onFork: (key: string) => void;
   onActivate: () => void;
 }
 
@@ -122,13 +150,33 @@ function RowView(props: RowViewProps): ReactElement {
 
   return (
     <li className={className} data-row={row.key}>
-      <button type="button" className="row-hit" onClick={props.onActivate}>
-        <span className="row-offset">{formatOffset(row.t)}</span>
-        <span className="row-body">{renderHead(row, props.expanded)}</span>
-      </button>
+      <div className="row-line">
+        <button type="button" className="row-hit" onClick={props.onActivate}>
+          <span className="row-offset">{formatOffset(row.t)}</span>
+          <span className="row-body">{renderHead(row, props.expanded)}</span>
+        </button>
+        {props.forkable ? (
+          <button
+            type="button"
+            className="row-fork"
+            title="Fork from here"
+            onClick={() => {
+              props.onFork(row.key);
+            }}
+          >
+            fork
+          </button>
+        ) : null}
+      </div>
       {props.expanded ? renderDetail(row) : null}
     </li>
   );
+}
+
+function forkTitle(reason: string | null, selected: boolean): string {
+  if (reason !== null) return reason;
+  if (selected) return "Fork from the selected event (f)";
+  return "Select a prompt or an assistant reply to fork from";
 }
 
 function renderHead(row: RowViewProps["row"], expanded: boolean): ReactElement {
