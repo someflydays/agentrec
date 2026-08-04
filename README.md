@@ -60,6 +60,8 @@ recording without installing anything.
 - `search` runs full-text search across every recorded session, down to the matching event.
 - `diff` compares two runs of the same task: what differed in tools, files, commands, and cost.
 - `fork` reruns a session from any point with a changed instruction (experimental).
+- Search, diff, and fork are in the dashboard too: a search palette, a linkable diff view, and
+  "fork from here" on any timeline row.
 - Everything is local: no telemetry, no network calls, dashboard bound to `127.0.0.1`.
 - `agentrec ls --json` for scripting.
 
@@ -207,8 +209,8 @@ is the other two channels layered on the same clock.
 - [x] Session diffing — `diff`
 - [x] Fork and replay: rerun a session from any point with a changed instruction — `fork`
   (experimental)
-- [ ] Fork from the dashboard timeline, not just the CLI
-- [ ] Search and diff in the dashboard
+- [x] Fork from the dashboard timeline, not just the CLI
+- [x] Search and diff in the dashboard
 - [ ] Adapters for coding agents other than Claude Code
 
 ## Contributing

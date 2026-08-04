@@ -94,11 +94,16 @@ the agent exposes them. First targets, chosen by what they expose: Codex CLI and
 (session logs), opencode (event stream). `meta.agent` widens from `"claude-code"` to a string with
 a registry — an additive format change.
 
-## Next — dashboard integration
+## Shipped in v0.3 — dashboard integration
 
-The CLI has search, diff, and fork; the dashboard has none of them yet. Fork especially wants to be
-a timeline affordance ("fork from here") rather than a `--at <seq>` flag, which is how the feature
-was originally pitched.
+Search, diff, and fork all reached the dashboard: a command palette that seeks the replay to a hit,
+a linkable `#/diff/<a>/<b>` view, and "fork from here" on timeline rows.
+
+Forking from a browser was the one place agentrec stopped being read-only, so it is opt-in per
+server (`agentrec ui --allow-fork`, the route 404s otherwise), guarded by Origin and Host checks
+against cross-origin and DNS-rebinding requests, and authenticated with a per-process token the
+page reads from `/api/capabilities`. With forking disabled the panel still fills in the fork point
+and copies the equivalent CLI command.
 
 ## Continuous — hardening
 
