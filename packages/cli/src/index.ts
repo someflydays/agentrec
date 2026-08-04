@@ -1,9 +1,12 @@
 import { Command } from "commander";
+import { registerDiffCommand } from "./commands/diff.js";
 import { registerExportCommand } from "./commands/export.js";
+import { registerForkCommand } from "./commands/fork.js";
 import { registerHookCommand } from "./commands/hook.js";
 import { registerLsCommand } from "./commands/ls.js";
 import { registerOpenCommand } from "./commands/open.js";
 import { registerRecordCommand } from "./commands/record.js";
+import { registerSearchCommand } from "./commands/search.js";
 import { registerUiCommand } from "./commands/ui.js";
 import { cliVersion } from "./version.js";
 
@@ -20,6 +23,9 @@ registerLsCommand(program);
 registerUiCommand(program);
 registerExportCommand(program);
 registerOpenCommand(program);
+registerSearchCommand(program);
+registerDiffCommand(program);
+registerForkCommand(program);
 registerHookCommand(program);
 
 // Sugar: `agentrec claude [...]` records a claude session directly.
