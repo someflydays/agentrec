@@ -68,6 +68,11 @@ function assistantText(uuid: string, parentUuid: string, text: string, extra = {
   });
 }
 
+/**
+ * Claude Code writes one transcript line per content block, so a `tool_use`
+ * never shares a line with the text that preceded it — see the real payloads in
+ * test/fixtures/hook-payloads and the transcript they were captured beside.
+ */
 function assistantToolUse(uuid: string, parentUuid: string, toolUseId: string): TranscriptLine {
   return node(uuid, parentUuid, "assistant", {
     message: {
@@ -361,14 +366,79 @@ describe("cutIndexForEvent", () => {
     const event = makeEvent(0, 0, "prompt", { text: "unknown" });
     expect(cutIndexForEvent(lines, event, new Date(START - 60_000).toISOString())).toBe(null);
   });
+
+  it("cuts before the tool_use block a tool.start names by toolUseId", () => {
+    // t is 0, so the timestamp path would resolve to nothing at all: only the
+    // toolUseId can produce an index here.
+    const event = makeEvent(5, 0, "tool.start", { name: "Bash", input: {}, toolUseId: "toolu_2" });
+    expect(cutIndexForEvent(lines, event, new Date(START).toISOString())).toBe(6);
+  });
+
+  it("cuts at the tool_result a tool.end names by toolUseId", () => {
+    const event = makeEvent(6, 0, "tool.end", { name: "Bash", ok: true, toolUseId: "toolu_1" });
+    expect(cutIndexForEvent(lines, event, new Date(START).toISOString())).toBe(3);
+  });
+
+  it("falls back to the timestamp for an unknown toolUseId and for an older recording", () => {
+    const unknown = makeEvent(5, 3400, "tool.start", {
+      name: "Bash",
+      input: {},
+      toolUseId: "toolu_gone",
+    });
+    expect(cutIndexForEvent(lines, unknown, new Date(START).toISOString())).toBe(2);
+
+    const legacy = makeEvent(5, 3400, "tool.start", { name: "Bash", input: {} });
+    expect(cutIndexForEvent(lines, legacy, new Date(START).toISOString())).toBe(2);
+  });
+
+  it("plans a prefix that drops the tool call and the result answering it", () => {
+    const event = makeEvent(5, 0, "tool.start", { name: "Bash", input: {}, toolUseId: "toolu_2" });
+    const cutIndex = cutIndexForEvent(lines, event, new Date(START).toISOString());
+    const plan = planFork(lines, { at: cutIndex ?? -1, newSessionId: NEW_SESSION });
+
+    expect(uuids(plan)).toEqual(["u1", "a1", "a2", "u2", "a3", undefined, "u3"]);
+    expect(plan.headUuid).toBe("u3");
+    expect(JSON.stringify(plan.lines)).not.toContain("toolu_2");
+  });
+
+  it("walks back past a whole batch when the call was one of several at once", () => {
+    clock = 0;
+    const parallel = [
+      userText("p1", null, "do both"),
+      assistantText("b1", "p1", "calling both"),
+      assistantToolUse("b2", "b1", "toolu_a"),
+      assistantToolUse("b3", "b2", "toolu_b"),
+      toolResult("p2", "b3", "toolu_a"),
+      toolResult("p3", "p2", "toolu_b"),
+      assistantText("b4", "p3", "both done"),
+    ];
+    const event = makeEvent(5, 0, "tool.start", { name: "Bash", input: {}, toolUseId: "toolu_b" });
+    const cutIndex = cutIndexForEvent(parallel, event, new Date(START).toISOString());
+    expect(cutIndex).toBe(2);
+
+    // Cutting between the two calls would strand toolu_a unanswered, so the
+    // plan backs off to before the batch rather than to the line asked for.
+    const plan = planFork(parallel, { at: cutIndex ?? -1, newSessionId: NEW_SESSION });
+    expect(uuids(plan)).toEqual(["p1", "b1"]);
+    expect(plan.headUuid).toBe("b1");
+    expect(plan.dropped).toBe(1);
+  });
 });
 
 describe("forkPoints", () => {
-  it("lists prompts and assistant replies with their seq and offset", () => {
+  it("lists prompts, tool calls and assistant replies with their seq and offset", () => {
     const events = [
       makeEvent(0, 0, "session.title", { title: "t" }),
       makeEvent(1, 1200, "prompt", { text: "do the thing" }),
-      makeEvent(2, 2400, "usage", {
+      makeEvent(2, 1800, "tool.start", {
+        name: "Bash",
+        input: { command: "pnpm test", description: "run the tests" },
+        toolUseId: "toolu_1",
+      }),
+      makeEvent(3, 1900, "tool.start", { name: "Read", input: { file_path: "/a/b.ts" } }),
+      makeEvent(4, 1950, "tool.start", { name: "Mystery", input: { odd: "shape" } }),
+      makeEvent(5, 1980, "tool.end", { name: "Bash", ok: true, toolUseId: "toolu_1" }),
+      makeEvent(6, 2400, "usage", {
         model: "m",
         requestId: "r",
         usage: {
@@ -379,12 +449,17 @@ describe("forkPoints", () => {
           cacheCreation1hInputTokens: 0,
         },
       }),
-      makeEvent(3, 3600, "assistant.text", { text: "on it" }),
+      makeEvent(7, 3600, "assistant.text", { text: "on it" }),
     ];
 
+    // tool.end resolves precisely too, but it is not offered as a fork point:
+    // the state after a call is the state the next point already forks from.
     expect(forkPoints(events)).toEqual([
       { seq: 1, t: 1200, kind: "prompt", preview: "do the thing" },
-      { seq: 3, t: 3600, kind: "assistant", preview: "on it" },
+      { seq: 2, t: 1800, kind: "tool", preview: "Bash: pnpm test" },
+      { seq: 3, t: 1900, kind: "tool", preview: "Read: /a/b.ts" },
+      { seq: 4, t: 1950, kind: "tool", preview: "Mystery" },
+      { seq: 7, t: 3600, kind: "assistant", preview: "on it" },
     ]);
   });
 });

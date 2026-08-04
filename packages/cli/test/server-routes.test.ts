@@ -203,11 +203,16 @@ describe("GET /api/sessions/:id/fork-points", () => {
 
     expect(response.status).toBe(200);
     expect(body.available).toBe(true);
-    // Tool calls are deliberately excluded: they come from hooks, whose clock is
-    // independent of the transcript, so cutting at one would be a guess.
-    expect(body.points.map((point) => point.type)).toEqual(["prompt", "assistant.text"]);
+    // A tool call is included because its tool_use_id names an exact transcript
+    // line; tool.end is not, being the same state as the point that follows it.
+    expect(body.points.map((point) => point.type)).toEqual([
+      "prompt",
+      "tool.start",
+      "assistant.text",
+    ]);
     expect(body.points[0]?.preview).toBe(`${LONG_PROMPT.slice(0, 80)}…`);
-    expect(body.points[1]?.preview).toBe("I added a retry loop");
+    expect(body.points[1]?.preview).toBe("Bash: pnpm test");
+    expect(body.points[2]?.preview).toBe("I added a retry loop");
     expect(body.points.every((point) => typeof point.t === "number")).toBe(true);
   });
 });

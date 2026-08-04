@@ -10,7 +10,7 @@ import {
   type SessionStore,
 } from "@agentrec/core";
 import { truncate } from "../format.js";
-import { resolveTranscriptPath } from "../recorder/fork.js";
+import { resolveTranscriptPath, toolCallPreview } from "../recorder/fork.js";
 import { type ForkLauncher, ForkRequestError, launchFork } from "./fork-runner.js";
 import { sendError, sendJson } from "./http.js";
 import { hasForkToken } from "./security.js";
@@ -20,12 +20,14 @@ const MAX_BODY_BYTES = 1024 * 1024;
 
 /**
  * Only events a fork can cut at *precisely*. A prompt resolves by matching its
- * text and an assistant turn by the transcript uuid recorded at capture time;
- * every other event type falls back to a timestamp lookup, and hook events run
- * on a different clock than transcript lines, so those cuts would be guesses.
- * Keep this in step with cutIndexForEvent and with the CLI's fork --list.
+ * text, an assistant turn by the transcript uuid recorded at capture time, and a
+ * tool call by the tool_use_id the hook and the transcript hold verbatim in
+ * common; every other event type falls back to a timestamp lookup, and hook
+ * events run on a different clock than transcript lines, so those cuts would be
+ * guesses. Keep this in step with cutIndexForEvent and with the CLI's
+ * fork --list.
  */
-const FORKABLE: ReadonlySet<SessionEventType> = new Set(["prompt", "assistant.text"]);
+const FORKABLE: ReadonlySet<SessionEventType> = new Set(["prompt", "assistant.text", "tool.start"]);
 
 function oneLine(text: string): string {
   return truncate(text.replace(/\s+/g, " ").trim(), PREVIEW_CHARS);
@@ -36,6 +38,8 @@ function previewOf(event: SessionEvent): string {
     case "prompt":
     case "assistant.text":
       return oneLine(event.data.text);
+    case "tool.start":
+      return oneLine(toolCallPreview(event.data.name, event.data.input));
     default:
       return event.type;
   }

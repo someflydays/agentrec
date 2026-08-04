@@ -67,7 +67,7 @@ export interface ForkPlan {
 export interface ForkPoint {
   seq: number;
   t: number;
-  kind: "prompt" | "assistant";
+  kind: "prompt" | "assistant" | "tool";
   preview: string;
 }
 
@@ -154,6 +154,37 @@ function contentBlocks(line: TranscriptLine): Record<string, unknown>[] {
     if (record !== undefined) blocks.push(record);
   }
   return blocks;
+}
+
+/** The first line whose message content holds a block the predicate accepts. */
+function indexOfBlock(
+  records: readonly (TranscriptLine | undefined)[],
+  match: (block: Record<string, unknown>) => boolean,
+): number {
+  for (let index = 0; index < records.length; index++) {
+    const record = records[index];
+    if (record === undefined) continue;
+    if (contentBlocks(record).some(match)) return index;
+  }
+  return -1;
+}
+
+/**
+ * Tool inputs share no schema, so a call is labelled by its tool plus the first
+ * of these fields it carries. The order is most-identifying first: a tool that
+ * has several is named by the one a reader would recognize the call from.
+ */
+const TOOL_PREVIEW_FIELDS = ["command", "file_path", "notebook_path", "path", "pattern", "url"];
+
+/** Shared by `fork --list` and the dashboard so both label a call the same way. */
+export function toolCallPreview(name: string, input: unknown): string {
+  const record = asRecord(input);
+  if (record === undefined) return name;
+  for (const field of TOOL_PREVIEW_FIELDS) {
+    const value = asNonEmptyString(record[field]);
+    if (value !== undefined) return `${name}: ${value}`;
+  }
+  return name;
 }
 
 function transcriptShapeProblem(lines: readonly unknown[]): string | undefined {
@@ -383,8 +414,12 @@ function lastIndexAtOrBefore(
  * response). A `prompt` came from a hook, not the transcript, so it is matched
  * against the user line that carries the same text and the cut lands *before*
  * it: forking at a prompt means replaying the state that prompt was answered
- * from. Every fallback errs backwards — a miss shortens the fork rather than
- * cutting past the intended point.
+ * from. `tool.start` and `tool.end` also came from hooks, but they carry the
+ * hook's `tool_use_id`, which Claude Code writes verbatim as the `id` of the
+ * transcript's `tool_use` block (verified against 2.1.221, issue #9), so they
+ * anchor to an exact line rather than to a clock the transcript does not share.
+ * Every fallback errs backwards — a miss shortens the fork rather than cutting
+ * past the intended point.
  */
 export function cutIndexForEvent(
   lines: readonly unknown[],
@@ -410,6 +445,38 @@ export function cutIndexForEvent(
     }
   }
 
+  if (event.type === "tool.start") {
+    // Undefined on recordings made before the recorder stored it; those fall
+    // through to the timestamp rather than fail.
+    const toolUseId = event.data.toolUseId;
+    if (toolUseId !== undefined) {
+      // Forking *at* a call means resuming from the state the agent decided to
+      // make it in, so the line carrying the call goes, and with it the result
+      // that answered it. Claude Code puts each content block on its own line,
+      // so anything the same turn thought or said first is still kept. When a
+      // turn issued several calls at once, planFork walks back past the whole
+      // batch rather than leave an earlier `tool_use` unanswered.
+      const index = indexOfBlock(
+        records,
+        (block) => block.type === "tool_use" && block.id === toolUseId,
+      );
+      if (index !== -1) return index - 1;
+    }
+  }
+
+  if (event.type === "tool.end") {
+    // The mirror of the above: this call has already happened, so its result is
+    // part of the state being forked from and the cut keeps it.
+    const toolUseId = event.data.toolUseId;
+    if (toolUseId !== undefined) {
+      const index = indexOfBlock(
+        records,
+        (block) => block.type === "tool_result" && block.tool_use_id === toolUseId,
+      );
+      if (index !== -1) return index;
+    }
+  }
+
   if (event.type === "prompt") {
     const wanted = event.data.text.trim();
     for (let index = 0; index < records.length; index++) {
@@ -424,6 +491,11 @@ export function cutIndexForEvent(
   return byTime === -1 ? null : byTime;
 }
 
+/**
+ * What `fork --list` offers. Every kind here resolves to an exact transcript
+ * line above; keep it in step with the server's FORKABLE set so the CLI and the
+ * dashboard offer the same points.
+ */
 export function forkPoints(events: readonly SessionEvent[]): ForkPoint[] {
   const points: ForkPoint[] = [];
   for (const event of events) {
@@ -431,6 +503,13 @@ export function forkPoints(events: readonly SessionEvent[]): ForkPoint[] {
       points.push({ seq: event.seq, t: event.t, kind: "prompt", preview: event.data.text });
     } else if (event.type === "assistant.text") {
       points.push({ seq: event.seq, t: event.t, kind: "assistant", preview: event.data.text });
+    } else if (event.type === "tool.start") {
+      points.push({
+        seq: event.seq,
+        t: event.t,
+        kind: "tool",
+        preview: toolCallPreview(event.data.name, event.data.input),
+      });
     }
   }
   return points;

@@ -15,6 +15,7 @@ import {
   plannedUuids,
   readTranscriptLines,
   resolveTranscriptPath,
+  toolCallPreview,
   writeForkedTranscript,
 } from "../recorder/fork.js";
 import { currentGitBranch, startRecordedSession } from "../recorder/session-runner.js";
@@ -56,7 +57,9 @@ function field(label: string, value: string): void {
 
 function printForkPoints(points: ForkPoint[]): void {
   if (points.length === 0) {
-    console.log("No prompts or assistant replies were recorded, so there is nothing to fork from.");
+    console.log(
+      "No prompts, assistant replies or tool calls were recorded, so there is nothing to fork from.",
+    );
     return;
   }
   const rows = points.map((point) => [
@@ -97,6 +100,11 @@ function describeEvent(event: SessionEvent): string {
   const at = `seq ${event.seq} · ${formatDuration(event.t)} · ${event.type}`;
   if (event.type === "prompt") return `${at} · "${oneLine(event.data.text)}"`;
   if (event.type === "assistant.text") return `${at} · "${oneLine(event.data.text)}"`;
+  if (event.type === "tool.start") {
+    const call = oneLine(toolCallPreview(event.data.name, event.data.input));
+    // The cut for a tool call lands before it, which the label has to say.
+    return `${at} · ${call} · resumes just before this call`;
+  }
   return at;
 }
 
