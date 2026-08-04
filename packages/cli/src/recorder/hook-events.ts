@@ -8,6 +8,28 @@ import { asNonEmptyString, asRecord } from "./json.js";
  * hook_event_name} plus per-event fields. Hooks are the only capture path that
  * cannot be retried, so an unrecognized or malformed payload yields an empty
  * result instead of an error.
+ *
+ * The field assumptions below were checked against the reference at
+ * https://code.claude.com/docs/en/hooks and against payloads captured from real
+ * runs of Claude Code 2.1.221 (see test/fixtures/hook-payloads/):
+ *
+ * - DOCUMENTED and OBSERVED: `tool_use_id` is present on PreToolUse,
+ *   PostToolUse and PostToolUseFailure, is shared by the pre/post pair of one
+ *   call, and is byte-identical to the `tool_use` block id in the transcript.
+ *   That equality is what lets tool.start/tool.end correlate and lets a fork cut
+ *   the conversation at an exact tool call.
+ * - DOCUMENTED and OBSERVED: PostToolUse fires only after a tool *succeeds*. A
+ *   tool that fails fires PostToolUseFailure instead, which carries a top-level
+ *   `error` string and no `tool_response` at all.
+ * - DOCUMENTED but NOT OBSERVED: the reference's PostToolUse example shows
+ *   `tool_response.success`, but no built-in tool emitted that field in 2.1.221.
+ *   It is still honoured when present because MCP tool output is passed through
+ *   without schema validation.
+ * - OBSERVED: `tool_response` has a different shape per tool (Bash returns
+ *   stdout/stderr, Read returns a nested `file`, Write and Edit return a
+ *   structuredPatch), so it is only ever stored opaquely.
+ * - ASSUMED: the Notification and SubagentStop shapes, which did not fire during
+ *   capture and so follow the documented fields alone.
  */
 const MAX_TOOL_OUTPUT_CHARS = 16 * 1024;
 
@@ -43,6 +65,8 @@ function mapPostToolUse(root: Record<string, unknown>): PendingEvent[] {
   if (name === undefined) return [];
   const ids = toolUseIdOf(root);
   const response = root.tool_response;
+  // This hook only fires on success; `success` is honoured for MCP tools, whose
+  // output reaches the hook without schema validation.
   const ok = asRecord(response)?.success !== false;
   const json = response === undefined ? undefined : stringifyResponse(response);
   const output =
@@ -60,6 +84,27 @@ function mapPostToolUse(root: Record<string, unknown>): PendingEvent[] {
     events.push({ type: "file.change", data: { ...change, ...ids } });
   }
   return events;
+}
+
+/**
+ * Without this the tool.start of every failed call would dangle unterminated,
+ * and a failure would be indistinguishable from a crash mid-call.
+ */
+function mapPostToolUseFailure(root: Record<string, unknown>): PendingEvent[] {
+  const name = asNonEmptyString(root.tool_name);
+  if (name === undefined) return [];
+  // `error` is already human-readable prose, unlike the JSON-encoded success
+  // response, so it is stored verbatim for the timeline and search to show.
+  const error = asNonEmptyString(root.error);
+  const output =
+    error === undefined ? undefined : truncate(error, MAX_TOOL_OUTPUT_CHARS, TRUNCATION_MARKER);
+  // No file.change: a write that failed never happened.
+  return [
+    {
+      type: "tool.end",
+      data: { name, ok: false, ...(output !== undefined ? { output } : {}), ...toolUseIdOf(root) },
+    },
+  ];
 }
 
 /** Undefined signals an unknown hook, which is distinct from a known hook with no events. */
@@ -87,6 +132,8 @@ function mapEvents(
     }
     case "PostToolUse":
       return mapPostToolUse(root);
+    case "PostToolUseFailure":
+      return mapPostToolUseFailure(root);
     case "Notification": {
       const message = asNonEmptyString(root.message);
       return message === undefined ? [] : [{ type: "notification", data: { message } }];

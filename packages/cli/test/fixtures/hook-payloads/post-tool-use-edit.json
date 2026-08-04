@@ -1,0 +1,34 @@
+{
+  "session_id": "80cea00a-6e0a-45db-9a21-8c78444e4671",
+  "transcript_path": "/Users/dev/.claude/projects/-private-tmp-claude-501--Users-dev-Developer-Personal-agent-blackbox-79b43829-6e15-4b5c-9a2c-3e0c7f832129-scratchpad-capture-proj2/80cea00a-6e0a-45db-9a21-8c78444e4671.jsonl",
+  "cwd": "/private/tmp/claude-501/-Users-dev-Developer-Personal-agent-blackbox/79b43829-6e15-4b5c-9a2c-3e0c7f832129/scratchpad/capture/proj2",
+  "prompt_id": "6526d690-a1ce-4c7e-be82-822f226c4ff1",
+  "permission_mode": "default",
+  "hook_event_name": "PostToolUse",
+  "tool_name": "Edit",
+  "tool_input": {
+    "file_path": "/private/tmp/claude-501/-Users-dev-Developer-Personal-agent-blackbox/79b43829-6e15-4b5c-9a2c-3e0c7f832129/scratchpad/capture/proj2/seed.ts",
+    "old_string": "const a = 1",
+    "new_string": "const a = 2",
+    "replace_all": false
+  },
+  "tool_response": {
+    "filePath": "/private/tmp/claude-501/-Users-dev-Developer-Personal-agent-blackbox/79b43829-6e15-4b5c-9a2c-3e0c7f832129/scratchpad/capture/proj2/seed.ts",
+    "oldString": "const a = 1",
+    "newString": "const a = 2",
+    "originalFile": "export const a = 1;\n",
+    "structuredPatch": [
+      {
+        "oldStart": 1,
+        "oldLines": 1,
+        "newStart": 1,
+        "newLines": 1,
+        "lines": ["-export const a = 1;", "+export const a = 2;"]
+      }
+    ],
+    "userModified": false,
+    "replaceAll": false
+  },
+  "tool_use_id": "toolu_01HR6gEtmDrUDXTHa4iV5xTX",
+  "duration_ms": 1
+}

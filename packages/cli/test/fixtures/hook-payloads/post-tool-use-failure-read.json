@@ -1,0 +1,16 @@
+{
+  "session_id": "80cea00a-6e0a-45db-9a21-8c78444e4671",
+  "transcript_path": "/Users/dev/.claude/projects/-private-tmp-claude-501--Users-dev-Developer-Personal-agent-blackbox-79b43829-6e15-4b5c-9a2c-3e0c7f832129-scratchpad-capture-proj2/80cea00a-6e0a-45db-9a21-8c78444e4671.jsonl",
+  "cwd": "/private/tmp/claude-501/-Users-dev-Developer-Personal-agent-blackbox/79b43829-6e15-4b5c-9a2c-3e0c7f832129/scratchpad/capture/proj2",
+  "prompt_id": "6526d690-a1ce-4c7e-be82-822f226c4ff1",
+  "permission_mode": "default",
+  "hook_event_name": "PostToolUseFailure",
+  "tool_name": "Read",
+  "tool_input": {
+    "file_path": "/nonexistent/missing-xyz.txt"
+  },
+  "tool_use_id": "toolu_012VK1SBopLxSnYWJMrB9ZBW",
+  "error": "File does not exist. Note: your current working directory is /private/tmp/claude-501/-Users-dev-Developer-Personal-agent-blackbox/79b43829-6e15-4b5c-9a2c-3e0c7f832129/scratchpad/capture/proj2.",
+  "is_interrupt": false,
+  "duration_ms": 1
+}

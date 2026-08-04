@@ -1,0 +1,24 @@
+{
+  "session_id": "7e8b8426-f6e6-4390-bd65-4d826bbec3fe",
+  "transcript_path": "/Users/dev/.claude/projects/-private-tmp-claude-501--Users-dev-Developer-Personal-agent-blackbox-79b43829-6e15-4b5c-9a2c-3e0c7f832129-scratchpad-capture-proj/7e8b8426-f6e6-4390-bd65-4d826bbec3fe.jsonl",
+  "cwd": "/private/tmp/claude-501/-Users-dev-Developer-Personal-agent-blackbox/79b43829-6e15-4b5c-9a2c-3e0c7f832129/scratchpad/capture/proj",
+  "prompt_id": "c7b67aca-cafe-47ba-ac16-cb22732265e5",
+  "permission_mode": "default",
+  "hook_event_name": "PostToolUse",
+  "tool_name": "Read",
+  "tool_input": {
+    "file_path": "/private/tmp/claude-501/-Users-dev-Developer-Personal-agent-blackbox/79b43829-6e15-4b5c-9a2c-3e0c7f832129/scratchpad/capture/proj/package.json"
+  },
+  "tool_response": {
+    "type": "text",
+    "file": {
+      "filePath": "/private/tmp/claude-501/-Users-dev-Developer-Personal-agent-blackbox/79b43829-6e15-4b5c-9a2c-3e0c7f832129/scratchpad/capture/proj/package.json",
+      "content": "{ \"name\": \"hookprobe\", \"version\": \"1.0.0\", \"private\": true }\n",
+      "numLines": 2,
+      "startLine": 1,
+      "totalLines": 2
+    }
+  },
+  "tool_use_id": "toolu_012hPYgDyhMwVXfpnWqiFXEt",
+  "duration_ms": 1
+}
